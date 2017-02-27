@@ -75,11 +75,10 @@ def _GaussianHMM(self, stride=1, **kwargs):
     if self._is_sparse:
         alg.fit(csr_matrix(np.concatenate([self._base.data[i][::stride, :]
                                 for i in range(self._base.n_sets)])))
-        self._dtrj = [alg.predict(csr_matrix(self._base.data[i]))
+        self.dtraj = [alg.predict(csr_matrix(self._base.data[i]))
                                 for i in range(self._base.n_sets)]
     else:
         alg.fit(np.concatenate([self._base.data[i][::stride, :]
                                for i in range(self._base.n_sets)]))
-        self._dtrj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+        self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
     self.centroids = alg.means_
-    assign(self)

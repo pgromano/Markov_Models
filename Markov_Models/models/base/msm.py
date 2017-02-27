@@ -1,6 +1,5 @@
 import Markov_Models as mm
 from msmtools.estimation.dense import tmatrix_sampler
-
 import warnings
 import numpy as np
 import multiprocessing as mp
@@ -162,6 +161,13 @@ class BaseMacroMSM(object):
         self._N = n_macrostates
         self._base.n_macrostates = n_macrostates
         self._micro = self._base.microstates
+
+        if lag is None:
+            self.lag = self._base.lag
+        else:
+            self._base.lag = lag
+            self._micro.lag = lag
+
         if self._N >= self._micro._N-1:
             raise AttributeError(
                 "Number of macrostates cannot be greater than N-1 of number of microstates.")
@@ -310,17 +316,6 @@ class BaseMacroMSM(object):
             #return mm.analyze.voronoi.FullVoronoi(self, clusters, bins)
         else:
             raise AttributeError('Method '+str(method)+' is not implemented!')
-
-
-class BaseHMM(object):
-    def __init__(self, **kwargs):
-        pass
-
-
-class BaseMarkovChain(object):
-    def __init__(self, **kwargs):
-        pass
-
 
 # Functions that conditional prepare parameters for functions
 
