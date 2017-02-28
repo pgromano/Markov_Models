@@ -42,7 +42,7 @@ def FullVoronoi(data, centroids, clusters=None, pbc=None, bins=100):
 
     q = []
     for i in range(n_features):
-        q.append(np.linspace(*extent[i],bins))
+        q.append(np.linspace(extent[i][0],extent[i][1],bins))
     Q = np.meshgrid(*q)
 
     data_and_centroids = np.concatenate([centroids, np.column_stack([Q[i].flatten() for i in range(n_features)])])
