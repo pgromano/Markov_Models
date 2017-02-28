@@ -1,2 +1,2 @@
 from . import _trajectory
-#from . import _voronoi
+from . import _voronoi

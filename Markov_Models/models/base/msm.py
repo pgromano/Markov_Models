@@ -35,7 +35,6 @@ class BaseMicroMSM(object):
         if method == 'GaussianNB':
             mm.models.classifier._GaussianNB(self, centroids=centroids, **kwargs)
 
-
     def count_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
@@ -134,12 +133,17 @@ class BaseMicroMSM(object):
         else:
             return its
 
-    def voronoi(self, clusters=None, bins=100, method='full'):
+    def voronoi(self, stride=1, clusters=None, pbc=None, bins=100, method='full'):
+        idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
+        train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+        labels = np.concatenate([self.dtraj[i][idx[i]] for i in range(self._base.n_sets)])
+        centroids = self.centroids
         if method == 'full':
-            raise AttributeError('Method '+str(method)+' is not implemented!')
-            #return mm.analyze.voronoi.FullVoronoi(self, clusters, bins)
-        else:
-            raise AttributeError('Method '+str(method)+' is not implemented!')
+            return mm.analyze.voronoi.FullVoronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
+        elif method == 'classify':
+            raise AttributeError('Note yet implemented')
+            #return mm.analyze.voronoi.ClassifyVoronoi(train, labels, bins=bins)
+
 
 class BaseMacroMSM(object):
     '''Macro level description of trajectory data, coarse grained via PCCA+
@@ -310,12 +314,18 @@ class BaseMacroMSM(object):
         else:
             return its
 
-    def voronoi(self, clusters=None, bins=100, method='full'):
+    def voronoi(self, stride=1, clusters=None, pbc=None, bins=100, method='full'):
+        idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
+        train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+        labels = np.concatenate([self.dtraj[i][idx[i]] for i in range(self._base.n_sets)])
+        centroids = self._micro.centroids
+        if clusters is None:
+            clusters = self.metastable_clusters
         if method == 'full':
-            raise AttributeError('Method '+str(method)+' is not implemented!')
-            #return mm.analyze.voronoi.FullVoronoi(self, clusters, bins)
-        else:
-            raise AttributeError('Method '+str(method)+' is not implemented!')
+            return mm.analyze.voronoi.FullVoronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
+        elif method == 'classify':
+            raise AttributeError('Note yet implemented')
+            #return mm.analyze.voronoi.ClassifyVoronoi(train, labels, bins=bins)
 
 # Functions that conditional prepare parameters for functions
 

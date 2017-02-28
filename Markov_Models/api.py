@@ -9,7 +9,9 @@ class MSM(BaseModel):
         self.macrostates = BaseMacroMSM(self)
 
 class HMM(BaseModel):
-    pass
+    def __init__(self, *args, **kwargs):
+        BaseModel.__init__(self, *args, **kwargs)
 
 class Markov_Chain(BaseModel):
-    pass
+    def __init__(self, *args, **kwargs):
+        BaseModel.__init__(self, *args, **kwargs)

@@ -59,16 +59,22 @@ def _KMeans(self, stride=1, tol=1e-5, max_iter=500, **kwargs):
         the function returns, but small numerical differences may be introduced
         by subtracting and then adding the data mean.
     '''
+
+    # Prepare clustering method
     alg = KMeans(n_clusters=self._N)
     for key,val in kwargs.items():
         setattr(alg,key,val)
+
+    # Shuffle data for training set
+    idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
+    train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+
+    # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
-        alg.fit(csr_matrix(np.concatenate([self._base.data[i][::stride, :]
-                   for i in range(self._base.n_sets)])))
+        alg.fit(csr_matrix(train))
         self.dtraj = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
     else:
-        alg.fit(np.concatenate([self._base.data[i][::stride, :]
-                   for i in range(self._base.n_sets)]))
+        alg.fit(train)
         self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
     self.centroids = alg.cluster_centers_
 
@@ -155,255 +161,26 @@ def _MiniBatchKMeans(self, stride=1, **kwargs):
     See http://www.eecs.tufts.edu/~dsculley/papers/fastkmeans.pdf
     '''
 
+    # Test batch size for safe input
     if self._N > 300:
         batch_size = int(self._N / 2)
     else:
         batch_size = 100
 
+    # Prepare clustering method
     alg = MiniBatchKMeans(n_clusters=self._N, batch_size=batch_size)
     for key,val in kwargs.items():
         setattr(alg,key,val)
+
+    # Shuffle data for training set
+    idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
+    train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+
+    # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
-        alg.fit(csr_matrix(np.concatenate([self._base.data[i][::stride, :]
-                                for i in range(self._base.n_sets)])))
-        self.dtraj = [alg.predict(csr_matrix(self._base.data[i]))
-                                for i in range(self._base.n_sets)]
+        alg.fit(csr_matrix(train))
+        self.dtraj = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
     else:
-        alg.fit(np.concatenate([self._base.data[i][::stride, :]
-                               for i in range(self._base.n_sets)]))
+        alg.fit(train)
         self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
     self.centroids = alg.cluster_centers_
-
-from sklearn.cluster import MeanShift
-def _MeanShift(self, stride=1, **kwargs):
-    '''Mean shift clustering using a flat kernel.
-    Mean shift clustering aims to discover "blobs" in a smooth density of
-    samples. It is a centroid-based algorithm, which works by updating
-    candidates for centroids to be the mean of the points within a given
-    region. These candidates are then filtered in a post-processing stage to
-    eliminate near-duplicates to form the final set of centroids.
-    Seeding is performed using a binning technique for scalability.
-    Read more in the :ref:`User Guide <mean_shift>`.
-    Parameters
-    ----------
-    bandwidth : float, optional
-        Bandwidth used in the RBF kernel.
-        If not given, the bandwidth is estimated using
-        sklearn.cluster.estimate_bandwidth; see the documentation for that
-        function for hints on scalability (see also the Notes, below).
-    seeds : array, shape=[n_samples, n_features], optional
-        Seeds used to initialize kernels. If not set,
-        the seeds are calculated by clustering.get_bin_seeds
-        with bandwidth as the grid size and default values for
-        other parameters.
-    bin_seeding : boolean, optional
-        If true, initial kernel locations are not locations of all
-        points, but rather the location of the discretized version of
-        points, where points are binned onto a grid whose coarseness
-        corresponds to the bandwidth. Setting this option to True will speed
-        up the algorithm because fewer seeds will be initialized.
-        default value: False
-        Ignored if seeds argument is not None.
-    min_bin_freq : int, optional
-       To speed up the algorithm, accept only those bins with at least
-       min_bin_freq points as seeds. If not defined, set to 1.
-    cluster_all : boolean, default True
-        If true, then all points are clustered, even those orphans that are
-        not within any kernel. Orphans are assigned to the nearest kernel.
-        If false, then orphans are given cluster label -1.
-    n_jobs : int
-        The number of jobs to use for the computation. This works by computing
-        each of the n_init runs in parallel.
-        If -1 all CPUs are used. If 1 is given, no parallel computing code is
-        used at all, which is useful for debugging. For n_jobs below -1,
-        (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one
-        are used.
-    Attributes
-    ----------
-    cluster_centers_ : array, [n_clusters, n_features]
-        Coordinates of cluster centers.
-    labels_ :
-        Labels of each point.
-    Notes
-    -----
-    Scalability:
-    Because this implementation uses a flat kernel and
-    a Ball Tree to look up members of each kernel, the complexity will tend
-    towards O(T*n*log(n)) in lower dimensions, with n the number of samples
-    and T the number of points. In higher dimensions the complexity will
-    tend towards O(T*n^2).
-    Scalability can be boosted by using fewer seeds, for example by using
-    a higher value of min_bin_freq in the get_bin_seeds function.
-    Note that the estimate_bandwidth function is much less scalable than the
-    mean shift algorithm and will be the bottleneck if it is used.
-    References
-    ----------
-    Dorin Comaniciu and Peter Meer, "Mean Shift: A robust approach toward
-    feature space analysis". IEEE Transactions on Pattern Analysis and
-    Machine Intelligence. 2002. pp. 603-619.
-    '''
-    alg = MeanShift()
-    for key,val in kwargs.items():
-        setattr(alg,key,val)
-    if self._is_sparse:
-        alg.fit(csr_matrix(np.concatenate([self._base.data[i][::stride, :]
-                                for i in range(self._base.n_sets)])))
-        self.dtraj = [alg.predict(csr_matrix(self._base.data[i]))
-                                for i in range(self._base.n_sets)]
-    else:
-        alg.fit(np.concatenate([self._base.data[i][::stride, :]
-                               for i in range(self._base.n_sets)]))
-        self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
-    self.centroids = alg.cluster_centers_
-
-from sklearn.cluster import Birch
-def _Birch(self, stride=1, **kwargs):
-    '''Implements the Birch clustering algorithm.
-    Every new sample is inserted into the root of the Clustering Feature
-    Tree. It is then clubbed together with the subcluster that has the
-    centroid closest to the new sample. This is done recursively till it
-    ends up at the subcluster of the leaf of the tree has the closest centroid.
-    Read more in the :ref:`User Guide <birch>`.
-    Parameters
-    ----------
-    threshold : float, default 0.5
-        The radius of the subcluster obtained by merging a new sample and the
-        closest subcluster should be lesser than the threshold. Otherwise a new
-        subcluster is started.
-    branching_factor : int, default 50
-        Maximum number of CF subclusters in each node. If a new samples enters
-        such that the number of subclusters exceed the branching_factor then
-        the node has to be split. The corresponding parent also has to be
-        split and if the number of subclusters in the parent is greater than
-        the branching factor, then it has to be split recursively.
-    n_clusters : int, instance of sklearn.cluster model, default 3
-        Number of clusters after the final clustering step, which treats the
-        subclusters from the leaves as new samples. If None, this final
-        clustering step is not performed and the subclusters are returned
-        as they are. If a model is provided, the model is fit treating
-        the subclusters as new samples and the initial data is mapped to the
-        label of the closest subcluster. If an int is provided, the model
-        fit is AgglomerativeClustering with n_clusters set to the int.
-    compute_labels : bool, default True
-        Whether or not to compute labels for each fit.
-    copy : bool, default True
-        Whether or not to make a copy of the given data. If set to False,
-        the initial data will be overwritten.
-    Attributes
-    ----------
-    root_ : _CFNode
-        Root of the CFTree.
-    dummy_leaf_ : _CFNode
-        Start pointer to all the leaves.
-    subcluster_centers_ : ndarray,
-        Centroids of all subclusters read directly from the leaves.
-    subcluster_labels_ : ndarray,
-        Labels assigned to the centroids of the subclusters after
-        they are clustered globally.
-    labels_ : ndarray, shape (n_samples,)
-        Array of labels assigned to the input data.
-        if partial_fit is used instead of fit, they are assigned to the
-        last batch of data.
-    References
-    ----------
-    * Tian Zhang, Raghu Ramakrishnan, Maron Livny
-      BIRCH: An efficient data clustering method for large databases.
-      http://www.cs.sfu.ca/CourseCentral/459/han/papers/zhang96.pdf
-    * Roberto Perdisci
-      JBirch - Java implementation of BIRCH clustering algorithm
-      https://code.google.com/archive/p/jbirch
-    '''
-    alg = Birch(n_clusters=self._N)
-    for key,val in kwargs.items():
-        setattr(alg,key,val)
-    if self._is_sparse:
-        alg.fit(csr_matrix(np.concatenate([self._base.trj[i][::stride, :]
-                                for i in range(self._base.nSim)])))
-        self.centroids = alg.subcluster_centers_
-        self._dtrj = [alg.predict(csr_matrix(self._base.trj[i]))
-                                for i in range(self._base.nSim)]
-    else:
-        alg.fit(np.concatenate([self._base.trj[i][::stride, :]
-                               for i in range(self._base.nSim)]))
-        self.centroids = alg.subcluster_centers_
-        self._dtrj = [alg.predict(self._base.trj[i]) for i in range(self._base.nSim)]
-
-
-from sklearn.cluster import DBSCAN
-def _DBSCAN(self, stride=1, **kwargs):
-    '''Perform DBSCAN clustering from vector array or distance matrix.
-    DBSCAN - Density-Based Spatial Clustering of Applications with Noise.
-    Finds core samples of high density and expands clusters from them.
-    Good for data which contains clusters of similar density.
-    Read more in the :ref:`User Guide <dbscan>`.
-    Parameters
-    ----------
-    eps : float, optional
-        The maximum distance between two samples for them to be considered
-        as in the same neighborhood.
-    min_samples : int, optional
-        The number of samples (or total weight) in a neighborhood for a point
-        to be considered as a core point. This includes the point itself.
-    metric : string, or callable
-        The metric to use when calculating distance between instances in a
-        feature array. If metric is a string or callable, it must be one of
-        the options allowed by metrics.pairwise.calculate_distance for its
-        metric parameter.
-        If metric is "precomputed", X is assumed to be a distance matrix and
-        must be square. X may be a sparse matrix, in which case only "nonzero"
-        elements may be considered neighbors for DBSCAN.
-        .. versionadded:: 0.17
-           metric *precomputed* to accept precomputed sparse matrix.
-    algorithm : {'auto', 'ball_tree', 'kd_tree', 'brute'}, optional
-        The algorithm to be used by the NearestNeighbors module
-        to compute pointwise distances and find nearest neighbors.
-        See NearestNeighbors module documentation for details.
-    leaf_size : int, optional (default = 30)
-        Leaf size passed to BallTree or cKDTree. This can affect the speed
-        of the construction and query, as well as the memory required
-        to store the tree. The optimal value depends
-        on the nature of the problem.
-    p : float, optional
-        The power of the Minkowski metric to be used to calculate distance
-        between points.
-    n_jobs : int, optional (default = 1)
-        The number of parallel jobs to run.
-        If ``-1``, then the number of jobs is set to the number of CPU cores.
-    Attributes
-    ----------
-    core_sample_indices_ : array, shape = [n_core_samples]
-        Indices of core samples.
-    components_ : array, shape = [n_core_samples, n_features]
-        Copy of each core sample found by training.
-    labels_ : array, shape = [n_samples]
-        Cluster labels for each point in the dataset given to fit().
-        Noisy samples are given the label -1.
-    Notes
-    -----
-    See examples/cluster/plot_dbscan.py for an example.
-    This implementation bulk-computes all neighborhood queries, which increases
-    the memory complexity to O(n.d) where d is the average number of neighbors,
-    while original DBSCAN had memory complexity O(n).
-    Sparse neighborhoods can be precomputed using
-    :func:`NearestNeighbors.radius_neighbors_graph
-    <sklearn.neighbors.NearestNeighbors.radius_neighbors_graph>`
-    with ``mode='distance'``.
-    References
-    ----------
-    Ester, M., H. P. Kriegel, J. Sander, and X. Xu, "A Density-Based
-    Algorithm for Discovering Clusters in Large Spatial Databases with Noise".
-    In: Proceedings of the 2nd International Conference on Knowledge Discovery
-    and Data Mining, Portland, OR, AAAI Press, pp. 226-231. 1996
-    '''
-    alg = DBSCAN(min_samples=self._N)
-    for key,val in kwargs.items():
-        setattr(alg,key,val)
-    if self._is_sparse:
-        alg.fit(csr_matrix(np.concatenate([self._base.trj[i][::stride, :]
-                                for i in range(self._base.nSim)])))
-    else:
-        alg.fit(np.concatenate([self._base.trj[i][::stride, :]
-                               for i in range(self._base.nSim)]))
-    self.centroids = alg.components_
-    self._N = self.centroids.shape[0]
-    assign(self)
