@@ -178,39 +178,6 @@ END SUBROUTINE T_MATRIX_REV_MAP
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! CALCULATE STATIONARY DISTRIBUTION OF TRANSITION MATRIX
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-SUBROUTINE STATIONARY_DISTRIBUTION(pivec,Tm,nStates)
-  IMPLICIT NONE
-  INTEGER(KIND=8),INTENT(in) :: nStates
-  DOUBLE PRECISION,INTENT(in) :: Tm(1:nStates,1:nStates)
-  DOUBLE PRECISION,INTENT(inout) :: pivec(1:nStates)
-
-  INTEGER(kind=8) :: i,INFO,LWORK,maxeig(1),order(1:nStates)
-  DOUBLE PRECISION :: WR(1:nStates), WI(1:nStates), VL(1:nStates,1:nStates), &
-       & WORK(nStates*nStates), VR(1:nStates,1:nStates)
-
-  WORK = 0
-  LWORK = -1
-  ! Diagonalize transition matrix T
-  CALL DGEEV("V","N",nStates,Tm,nStates,WR,WI,VL,nStates,VR,nStates,WORK,LWORK,INFO)
-
-  ! Order eigenvalues
-  DO i=1,nStates
-    maxeig = MAXLOC(ABS(WR))
-    order(i) = maxeig(1)
-    WR(order(i)) = 1D-20
-  END DO
-
-  ! Assign first column vector to stationary distribution
-  DO i=1,nStates
-    pivec(i) = ABS(VL(order(1),i))/SUM(ABS(VL(order(1),:)))
-  END DO
-  !WRITE(*,*),pivec,INFO
-END SUBROUTINE STATIONARY_DISTRIBUTION
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! NORMALIZE COUNT MATRIX AND RETURN TRANSITION MATRIX
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE NORMALIZE(Tm,C,nStates,REV)
