@@ -22,7 +22,7 @@ def ClassifyVoronoi(data, clusters=None, extent=None, bins=100, **kwargs):
 
     q = []
     for i in range(n_features):
-        q.append(np.linspace(*extent[i],bins[i]))
+        q.append(np.linspace(extent[i][0],extent[i][1],bins[i]))
     Q = np.meshgrid(*q)
 
     knc = KNeighborsClassifier(n_neighbors=1, **kwargs)
