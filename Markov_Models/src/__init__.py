@@ -1,2 +1,2 @@
-from . import _trajectory
+from . import _estimate
 from . import _voronoi

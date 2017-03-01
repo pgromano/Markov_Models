@@ -24,10 +24,9 @@ def PCCA(self, n_macrostates, lag=None):
 def assign(self):
     n_states = self._base.n_microstates
     n_samples = self._base.n_samples
-    sets = np.array(self.metastable_clusters).astype(int, order='F')
+    sets = np.array(self.metastable_clusters).astype(int)
     self.dtraj = []
     for i in range(self._base.n_sets):
-        dtraj_in = np.array(self._micro.dtraj[i]).astype(int, order='F') + 1
-        dtraj_out = np.zeros(n_samples[i]).astype(int, order='F')
-        mm.src._trajectory.assignment(dtraj_out, dtraj_in, sets, n_states, n_samples[i])
+        dtraj = np.array(self._micro.dtraj[i]).astype(int)
+        dtraj_out = mm.src._estimate.crisp_assignment(dtraj, sets)
         self.dtraj.append(dtraj_out)

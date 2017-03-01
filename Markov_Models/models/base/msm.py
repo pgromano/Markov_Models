@@ -38,13 +38,13 @@ class BaseMicroMSM(object):
     def count_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
-        self._C = mm.analyze.trajectory.CMatrix(self.dtraj, lag=lag)
+        self._C = mm.analyze.estimate.CMatrix(self.dtraj, lag=lag)
         return self._C
 
     def transition_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
-        self._T = mm.analyze.trajectory.TransitionMatrix(self.dtraj, lag=lag, rev=self._is_reversible)
+        self._T = mm.analyze.estimate.TMatrix(self.dtraj, lag=lag, rev=self._is_reversible)
         return self._T
 
     def metastability(self, lag=None, precomputed=False):
@@ -126,7 +126,7 @@ class BaseMicroMSM(object):
                             reversible=self._is_reversible)
                     samples = sampler.sample(n_bootstraps)
                     error.append(np.array([
-                        mm.analyze.trajectory.Timescales(
+                        mm.analyze.estimate.Timescales(
                             T, lag, k=k, sparse=self._is_sparse, rev=self._is_reversible, **kwargs)
                         for T in samples]).std(0))
             return its, np.array(error)
@@ -139,10 +139,10 @@ class BaseMicroMSM(object):
         labels = np.concatenate([self.dtraj[i][idx[i]] for i in range(self._base.n_sets)])
         centroids = self.centroids
         if method == 'full':
-            return mm.analyze.voronoi.FullVoronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
+            return mm.analyze.estimate.Voronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
         elif method == 'classify':
             raise AttributeError('Note yet implemented')
-            #return mm.analyze.voronoi.ClassifyVoronoi(train, labels, bins=bins)
+            #return mm.analyze.estimate.ClassifyVoronoi(train, labels, bins=bins)
 
 
 class BaseMacroMSM(object):
@@ -218,13 +218,13 @@ class BaseMacroMSM(object):
     def count_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
-        self._C = mm.analyze.trajectory.CMatrix(self.dtraj, lag=lag)
+        self._C = mm.analyze.estimate.CMatrix(self.dtraj, lag=lag)
         return self._C
 
     def transition_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
-        self._T = mm.analyze.trajectory.TransitionMatrix(self.dtraj, lag=lag, rev=self._is_reversible)
+        self._T = mm.analyze.estimate.TMatrix(self.dtraj, lag=lag, rev=self._is_reversible)
         return self._T
 
     def metastability(self, lag=None, precomputed=False):
@@ -307,7 +307,7 @@ class BaseMacroMSM(object):
                             reversible=self._is_reversible)
                     samples = sampler.sample(n_bootstraps)
                     error.append(np.array([
-                        mm.analyze.trajectory.Timescales(
+                        mm.analyze.estimate.Timescales(
                             T, lag, k=k, sparse=self._is_sparse, rev=self._is_reversible, **kwargs)
                         for T in samples]).std(0))
             return its, np.array(error)
@@ -322,10 +322,10 @@ class BaseMacroMSM(object):
         if clusters is None:
             clusters = self.metastable_clusters
         if method == 'full':
-            return mm.analyze.voronoi.FullVoronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
+            return mm.analyze.estimate.Voronoi(train, centroids, clusters=clusters, pbc=pbc, bins=bins)
         elif method == 'classify':
             raise AttributeError('Note yet implemented')
-            #return mm.analyze.voronoi.ClassifyVoronoi(train, labels, bins=bins)
+            #return mm.analyze.estimate.ClassifyVoronoi(train, labels, bins=bins)
 
 # Functions that conditional prepare parameters for functions
 
@@ -367,6 +367,6 @@ def _Timescales(self, lags, k, **kwargs):
             its.append(np.zeros(k-1))
         else:
             T = _GetTransitionMatrix(self, lag, False)
-            its.append(mm.analyze.trajectory.Timescales(
+            its.append(mm.analyze.estimate.Timescales(
                 T, lag, k=k, sparse=self._is_sparse, rev=self._is_reversible, **kwargs))
     return np.array(its)

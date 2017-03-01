@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
-
 from Markov_Models.src import _voronoi
 
 def ClassifyVoronoi(data, clusters=None, extent=None, bins=100, **kwargs):
@@ -51,19 +50,18 @@ def FullVoronoi(data, centroids, clusters=None, pbc=None, bins=100):
     norm_centroids = norm_data_and_centroids[:centroids.shape[0],:].astype(float, order='F')
 
     if clusters is None:
-        clusters = np.arange(1,n_centroids+1).astype(int, order='F')
+        clusters = np.arange(1,n_centroids+1)
     else:
-        clusters = clusters.astype(int, order='F')
+        clusters = clusters
         if clusters.min() == 0:
             clusters += 1
 
     if pbc is None:
-        pbc = np.zeros(n_features).astype(int, order='F')
+        pbc = np.zeros(n_features)
     else:
-        pbc = np.array(pbc).astype(int, order='F')
+        pbc = np.array(pbc)
 
-    states = np.zeros(n_samples).astype(int, order='F')
-    _voronoi.initialize(states, norm_data, norm_centroids, clusters, pbc, n_centroids, n_features, n_samples)
+    states = _voronoi.initialize(norm_data, norm_centroids, clusters, pbc)
 
     if n_features-1 == 1:
         return states.reshape(bins,bins)

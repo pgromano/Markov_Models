@@ -1,4 +1,11 @@
-from numpy.distutils.core import setup, Extension
+try:
+    from setuptools import setup
+except:
+    from distutils.core import setup
+from distutils.extension import Extension
+
+ext1 = Extension('Markov_models.src._voronoi', ["Markov_models/src/_voronoi.c"])
+ext2 = Extension('Markov_models.src._estimate', ["Markov_models/src/_estimate.c"])
 
 setup(
     name = 'Markov Models',
@@ -16,5 +23,6 @@ setup(
         'scipy',
         'sklearn'
     ],
+    ext_modules=[ext1,ext2],
     zip_safe = False
 )
