@@ -4,8 +4,8 @@ except:
     from distutils.core import setup
 from distutils.extension import Extension
 
-ext1 = Extension('Markov_Models.src._voronoi', ["Markov_models/src/_voronoi.c"])
-ext2 = Extension('Markov_Models.src._estimate', ["Markov_models/src/_estimate.c"])
+ext1 = Extension('Markov_Models.src._voronoi', ["Markov_Models/src/_voronoi.c"])
+ext2 = Extension('Markov_Models.src._estimate', ["Markov_Models/src/_estimate.c"])
 
 setup(
     name = 'Markov Models',
