@@ -1,1 +1,2 @@
-from . import base, classifier, cluster, mixture, regressor, score
+from . import classifier, cluster, mixture, regressor, score
+from . import base

@@ -1,17 +1,25 @@
-try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup, Extension, find_packages
+from Cython.Build import cythonize
+from os.path import join
+import numpy
 
-ext1 = Extension('Markov_Models.src._voronoi', ["Markov_Models/src/_voronoi.c"])
-ext2 = Extension('Markov_Models.src._estimate', ["Markov_Models/src/_estimate.c"])
+SRC_DIR = 'Markov_Models/analysis/src'
+extensions = []
+
+setup(ext_modules = cythonize(join(SRC_DIR, "_assignment.pyx")))
+extensions.append(
+    Extension(
+        'Markov_Models.analysis.src._assignment',
+        sources = [join(SRC_DIR, "_assignment.c")],
+        include_dirs=[SRC_DIR, numpy.get_include()]),
+)
 
 setup(
-    name = 'Markov Models',
-    version = '0.1',
+    name = 'Markov_Models',
     author = 'Pablo Romano',
+    author_email = 'promano@uoregon.edu',
     description = 'Python API for Generating Markov Models',
+    version = '0.1',
     url = 'https://github.com/pgromano/Markov_Models',
 
     packages = ['Markov_Models'],
@@ -19,10 +27,9 @@ setup(
         'hmmlearn',
         'msmtools',
         'numpy',
-        'pandas',
         'scipy',
         'sklearn'
     ],
-    ext_modules=[ext1,ext2],
-    zip_safe = False
+    ext_modules=extensions,
+    zip_safe = False,
 )

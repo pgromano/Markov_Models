@@ -1,6 +1,4 @@
-import Markov_Models as mm
 from Markov_Models.models.base import BaseModel, BaseMicroMSM, BaseMacroMSM
-
 
 class MSM(BaseModel):
     def __init__(self, *args, **kwargs):

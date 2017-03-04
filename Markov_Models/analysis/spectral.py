@@ -4,7 +4,7 @@ from scipy.linalg import eig, eigh, solve
 from scipy.sparse.linalg import eigs, eigsh
 from scipy.sparse import diags,csr_matrix
 
-def EigenValues(T, k=None, ncv=None, rev=True, sparse=False, **kwargs):
+def eigen_values(T, k=None, ncv=None, rev=True, sparse=False):
     r'''Compute eigenvalues of transition matrix.
     Parameters
     ---------_
@@ -47,47 +47,26 @@ def EigenValues(T, k=None, ncv=None, rev=True, sparse=False, **kwargs):
         else:
             return w[:k]
 
-def _DenseEigenValuesRev(T, k=None):
-    pi = StationaryDistribution(T, sparse=False)
-    Tsym = np.sqrt(pi)
-    S = Tsym[:,None] * T / Tsym
-    w, R = eigh(S)
-    idx = np.argsort(abs(w))[::-1]
-    if k is None:
-        return w[idx].real
-    else:
-        return w[idx][:k].real
+def eigen_vectors(T, k=None, ncv=None, rev=True, left=True, right=True, sparse=False):
+    r'''Compute eigenvalues of transition matrix.
+    Parameters
+    ---------_
+    T : (n, n) numpy.ndarray
+        Transition matrix (row stochastic)
+    k : int, optional
+        The number of eigenvalues and eigenvectors desired. k must be smaller
+        than N. It is not possible to compute all eigenvectors of a matrix.
+    ncv : int, option
+        The number of Lanczos vectors generated ncv must be greater than k; it
+        is recommended that ncv > 2*k. Default: min(n, max(2*k + 1, 20))
+    Returns
+    -------
+    L : (k, k) numpy.ndarray
+        Matrix of left eigenvectors.
+    R : (k, k) numpy.ndarray
+        Matrix of right eigenvectors.
+    '''
 
-def _DenseEigenValuesNRev(T, k=None):
-    w, R = eig(T)
-    idx = np.argsort(abs(w))[::-1]
-    if k is None:
-        return w[idx].real
-    else:
-        return w[idx][:k].real
-
-def _SparseEigenValuesRev(T, k=6, ncv=None):
-    # Symmetrize Transition Matrix
-    pi = StationaryDistribution(T, ncv=ncv, sparse=True)
-    Tsym = np.sqrt(pi)
-
-    # Convert T matrix to sparse
-    T = csr_matrix(T)
-    D = diags(Tsym, 0)
-    Dinv = diags(1.0/Tsym, 0)
-    S = (D.dot(T)).dot(Dinv)
-
-    # Diagonalize
-    w = eigsh(S, k=k, ncv=ncv, which='LM', return_eigenvectors=False)
-    idx = np.argsort(abs(w))[::-1]
-    return w[idx].real
-
-def _SparseEigenValuesNRev(T, k=6, ncv=None):
-    w = eigs(T, k=k, which='LM', ncv=ncv, return_eigenvectors=False)
-    idx = np.argsort(abs(w))[::-1]
-    return w[idx].real
-
-def EigenVectors(T, k=None, ncv=None, rev=True, left=False, right=True, sparse=False):
     if sparse is True:
         if k is None:
             k = min(T.shape[0]-2, 6)
@@ -116,9 +95,49 @@ def EigenVectors(T, k=None, ncv=None, rev=True, left=False, right=True, sparse=F
     elif left is False and right is True:
         return R
 
+def _DenseEigenValuesRev(T, k=None):
+    pi = stationary_distribution(T, sparse=False)
+    Tsym = np.sqrt(pi)
+    S = Tsym[:,None] * T / Tsym
+    w, R = eigh(S)
+    idx = np.argsort(abs(w))[::-1]
+    if k is None:
+        return w[idx].real
+    else:
+        return w[idx][:k].real
+
+def _DenseEigenValuesNRev(T, k=None):
+    w, R = eig(T)
+    idx = np.argsort(abs(w))[::-1]
+    if k is None:
+        return w[idx].real
+    else:
+        return w[idx][:k].real
+
+def _SparseEigenValuesRev(T, k=6, ncv=None):
+    # Symmetrize Transition Matrix
+    pi = stationary_distribution(T, ncv=ncv, sparse=True)
+    Tsym = np.sqrt(pi)
+
+    # Convert T matrix to sparse
+    T = csr_matrix(T)
+    D = diags(Tsym, 0)
+    Dinv = diags(1.0/Tsym, 0)
+    S = (D.dot(T)).dot(Dinv)
+
+    # Diagonalize
+    w = eigsh(S, k=k, ncv=ncv, which='LM', return_eigenvectors=False)
+    idx = np.argsort(abs(w))[::-1]
+    return w[idx].real
+
+def _SparseEigenValuesNRev(T, k=6, ncv=None):
+    w = eigs(T, k=k, which='LM', ncv=ncv, return_eigenvectors=False)
+    idx = np.argsort(abs(w))[::-1]
+    return w[idx].real
+
 def _DenseDecompositionRev(T, k=None):
     # Calculation stationary distribution
-    pi = StationaryDistribution(T, sparse=False)
+    pi = stationary_distribution(T, sparse=False)
 
     # Symmetrize Transition matrix
     Tsym = np.sqrt(pi)[:,None]*T/np.sqrt(pi)
@@ -168,7 +187,7 @@ def _DenseDecompositionNRev(T, k=None):
 
 def _SparseDecompositionRev(T, k=6, ncv=None):
     # Calculation stationary distribution
-    pi = StationaryDistribution(T, ncv=ncv, sparse=True)
+    pi = stationary_distribution(T, ncv=ncv, sparse=True)
 
     # Symmetrize Transition matrix
     T = csr_matrix(T)
@@ -221,7 +240,7 @@ def _SparseDecompositionNRev(T, k=6, ncv=None):
     R = R / ov[np.newaxis, :]
     return w.real, L.real, R.real
 
-def StationaryDistribution(T, ncv=None, sparse=False):
+def stationary_distribution(T, ncv=None, sparse=False):
     if sparse is True:
         w, L = eigs(T.T, k=1, ncv=ncv, which='LR')
         L = L[:, 0].real
@@ -232,47 +251,3 @@ def StationaryDistribution(T, ncv=None, sparse=False):
         w = w[idx]
         L = L[:, idx]
         return abs(L[:, 0]) / np.sum(abs(L[:, 0]))
-
-
-def mfpt(T, origin, target):
-    def mfpt_solver(T, target):
-        dim = T.shape[0]
-        A = np.eye(dim) - T
-        A[target, :] = 0.0
-        A[target, target] = 1.0
-        b = np.ones(dim)
-        b[target] = 0.0
-        return solve(A, b)
-    pi = StationaryDistribution(T)
-
-    """Stationary distribution restriced on starting set X"""
-    nuX = pi[origin]
-    piX = nuX / np.sum(nuX)
-
-    """Mean first-passage time to Y (for all possible starting states)"""
-    tY = mfpt_solver(T, target)
-
-    """Mean first-passage time from X to Y"""
-    tXY = np.dot(piX, tY[origin])
-    return tXY
-
-def error(T):
-    N = T.shape[0]
-    pi = StationaryDistribution(T)
-    E = np.array([[(T[i,j] - T[j,i]*pi[i]/pi[j])**2 for i in range(N)] for j in range(N)])
-    return E.sum(0)/(N-1)
-
-def GrahamSchmidt(X, row_vecs=True, norm=True):
-    if not row_vecs:
-        X = X.T
-    Y = X[0:1, :].copy()
-    for i in range(1, X.shape[0]):
-        proj = np.diag(
-            (X[i, :].dot(Y.T) / np.linalg.norm(Y, axis=1)**2).flat).dot(Y)
-        Y = np.vstack((Y, X[i, :] - proj.sum(0)))
-    if norm:
-        Y = np.diag(1 / np.linalg.norm(Y, axis=1)).dot(Y)
-    if row_vecs:
-        return Y
-    else:
-        return Y.T
