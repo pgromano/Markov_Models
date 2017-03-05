@@ -47,7 +47,6 @@ class BaseMicroMSM(object):
         else:
             self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
 
-
     def _count_matrix(self, lag=1):
         return mm.analysis.count_matrix(self.dtraj, lag=lag, sparse=self._is_sparse)
 
@@ -95,6 +94,17 @@ class BaseMicroMSM(object):
     def timescales(self, lags=None, **kwargs):
         its = mm.analysis.timescales.ImpliedTimescaleClass(self)
         return its.implied_timescales(lags, **kwargs)
+
+    def update(self, **kwargs):
+        for key, val in kwargs.items():
+            if key == 'lag':
+                self.lag = val
+                self._C = self._count_matrix(lag=val)
+                self._T = self._transition_matrix(lag=val)
+            elif key == 'rev':
+                self._base._is_reversible = self._is_reversible = val
+            elif key == 'sparse':
+                self._base._is_sparse = self._is_sparse = val
 
 
 class BaseMacroMSM(object):
@@ -218,3 +228,18 @@ class BaseMacroMSM(object):
     def timescales(self, lags=None, **kwargs):
         its = mm.analysis.timescales.ImpliedTimescaleClass(self)
         return its.implied_timescales(lags, **kwargs)
+
+    def update(self, **kwargs):
+        for key, val in kwargs.items():
+            if key == 'lag':
+                self.lag = val
+                self._C = self._count_matrix(lag=val)
+                self._T = self._transition_matrix(lag=val)
+
+                self._micro.lag = val
+                self._micro._C = self._micro._count_matrix(lag=val)
+                self._micro._T = self._micro._transition_matrix(lag=val)
+            elif key == 'rev':
+                self._base._is_reversible = self._is_reversible = val
+            elif key == 'sparse':
+                self._base._is_sparse = self._is_sparse = val
