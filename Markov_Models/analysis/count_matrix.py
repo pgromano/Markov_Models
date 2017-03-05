@@ -17,8 +17,8 @@ def _count_matrix(dtraj, lag, nstates, sparse):
         return C.toarray()
 
 def count_matrix(dtraj, lag=1, sparse=False):
-    nstates = np.amax(dtraj)+1
     nsets = len(dtraj)
+    nstates = np.amax([dtraj[i] for i in range(nsets)])+1
 
     C = [_count_matrix(dtraj[i], lag, nstates, sparse) for i in range(nsets)]
     return np.sum(C, axis=0)
