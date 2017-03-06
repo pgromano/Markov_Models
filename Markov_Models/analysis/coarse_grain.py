@@ -6,7 +6,7 @@ from . import src
 def PCCA(self, n_macrostates, lag=None):
     # Calculate transition matrix, and if necessary, modify the lag time
     if lag is None:
-        T = self._micro.transition_matrix
+        T = self._micro._T
     else:
         T = self._micro._transition_matrix(lag=lag)
 

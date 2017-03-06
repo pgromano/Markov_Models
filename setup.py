@@ -6,12 +6,20 @@ import numpy
 SRC_DIR = 'Markov_Models/analysis/src'
 extensions = []
 
-setup(ext_modules = cythonize(join(SRC_DIR, "_assignment.pyx")))
+setup(ext_modules = cythonize(join(SRC_DIR, "_assignment.pyx")), include_dirs=[numpy.get_include()])
 extensions.append(
     Extension(
         'Markov_Models.analysis.src._assignment',
         sources = [join(SRC_DIR, "_assignment.c")],
-        include_dirs=[SRC_DIR, numpy.get_include()]),
+        include_dirs=[numpy.get_include()]),
+)
+
+setup(ext_modules = cythonize(join(SRC_DIR, "_mle_tmat_prinz.pyx")), include_dirs=[numpy.get_include()])
+extensions.append(
+    Extension(
+        'Markov_Models.analysis.src._mle_tmat_prinz',
+        sources = [join(SRC_DIR, "_mle_tmat_prinz.c")],
+        include_dirs=[numpy.get_include()]),
 )
 
 setup(

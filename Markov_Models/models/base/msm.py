@@ -6,10 +6,11 @@ import multiprocessing as mp
 # TODO: Add multiprocessing to parallelize bootstrapping
 class BaseMicroMSM(object):
 
-    def __init__(self, MSM):
-        self._base = MSM
-        self._is_sparse = MSM._is_sparse
-        self._is_reversible = MSM._is_reversible
+    def __init__(self, BaseModel):
+        self._base = BaseModel
+        self._is_force_db = BaseModel._is_force_db
+        self._is_reversible = BaseModel._is_reversible
+        self._is_sparse = BaseModel._is_sparse
 
     def fit(self, n_states, lag=100, stride=1, method='KMeans', tol=1e-5, max_iter=500, **kwargs):
         self._base.n_microstates = n_states
@@ -17,7 +18,7 @@ class BaseMicroMSM(object):
         self.lag = lag
 
         if method == 'HMM':
-            mm.models.hmm._GaussianHMM(self, stride=stride, tol=tol, max_iter=max_iter, **kwargs)
+            mm.models.hmm._GaussianHMM(self, stride=stride, tol=tol, n_iter=max_iter, **kwargs)
         elif method == 'KMeans':
             mm.models.cluster._KMeans(self, stride=stride, tol=tol, max_iter=max_iter, **kwargs)
         elif method == 'MiniBatchKMeans':
@@ -25,7 +26,10 @@ class BaseMicroMSM(object):
 
         self._C = mm.analysis.count_matrix(self.dtraj, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
-            self._T = mm.analysis.transition_matrix.symmetric_T_estimator(self._C)
+            if self._is_force_db is True:
+                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+            else:
+                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
         else:
             self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
 
@@ -43,7 +47,10 @@ class BaseMicroMSM(object):
 
         self._C = mm.analysis.count_matrix(self.dtraj, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
-            self._T = mm.analysis.transition_matrix.symmetric_T_estimator(self._C)
+            if self._is_force_db is True:
+                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+            else:
+                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
         else:
             self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
 
@@ -56,7 +63,10 @@ class BaseMicroMSM(object):
         else:
             C = self._C
         if self._is_reversible is True:
-            return mm.analysis.transition_matrix.symmetric_T_estimator(C)
+            if self._is_force_db is True:
+                return mm.analysis.transition_matrix.sym_T_estimator(C)
+            else:
+                return mm.analysis.transition_matrix.rev_T_estimator(C)
         else:
             return mm.analysis.transition_matrix.nonrev_T_matrix(C)
 
@@ -118,10 +128,11 @@ class BaseMacroMSM(object):
     -----
     '''
 
-    def __init__(self, MSM):
-        self._base = MSM
+    def __init__(self, BaseModel):
+        self._base = BaseModel
+        self._is_force_db = BaseModel._is_force_db
+        self._is_reversible = BaseModel._is_reversible
         self._is_sparse = False
-        self._is_reversible = MSM._is_reversible
         self._micro = self._base.microstates
 
     def fit(self, n_macrostates, lag=None, method='PCCA'):
@@ -155,7 +166,10 @@ class BaseMacroMSM(object):
 
         self._C = mm.analysis.count_matrix(self.dtraj, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
-            self._T = mm.analysis.transition_matrix.symmetric_T_estimator(self._C)
+            if self._is_force_db is True:
+                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+            else:
+                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
         else:
             self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
 
@@ -175,7 +189,10 @@ class BaseMacroMSM(object):
 
         self._C = mm.analysis.count_matrix(self.dtraj, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
-            self._T = mm.analysis.transition_matrix.symmetric_T_estimator(self._C)
+            if self._is_force_db is True:
+                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+            else:
+                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
         else:
             self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
 
@@ -190,7 +207,10 @@ class BaseMacroMSM(object):
         else:
             C = self._C
         if self._is_reversible is True:
-            return mm.analysis.transition_matrix.symmetric_T_estimator(C)
+            if self._is_force_db is True:
+                return mm.analysis.transition_matrix.sym_T_estimator(C)
+            else:
+                return mm.analysis.transition_matrix.rev_T_estimator(sC)
         else:
             return mm.analysis.transition_matrix.nonrev_T_matrix(C)
 
