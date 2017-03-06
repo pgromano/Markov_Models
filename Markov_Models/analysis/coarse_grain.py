@@ -24,4 +24,4 @@ def PCCA(self, n_macrostates, lag=None):
 # TODO: Implement BACE or alternative coarse graining methods???
 
 def _assign_macrostates(dtraj, sets):
-    return src._assignment.crisp_assignment(dtraj, sets)
+    return np.asarray(src._assignment.crisp_assignment(dtraj, sets))

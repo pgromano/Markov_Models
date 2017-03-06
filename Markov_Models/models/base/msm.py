@@ -210,7 +210,7 @@ class BaseMacroMSM(object):
             if self._is_force_db is True:
                 return mm.analysis.transition_matrix.sym_T_estimator(C)
             else:
-                return mm.analysis.transition_matrix.rev_T_estimator(sC)
+                return mm.analysis.transition_matrix.rev_T_estimator(C)
         else:
             return mm.analysis.transition_matrix.nonrev_T_matrix(C)
 
