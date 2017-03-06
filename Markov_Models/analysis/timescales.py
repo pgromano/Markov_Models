@@ -53,8 +53,11 @@ class ImpliedTimescaleClass(object):
         # Calculate implied timescales from full trajectory data
         its = []
         for lag in lags:
-            T = self._base._transition_matrix(lag=lag)
-            its.append(_its(T, lag, k=k, ncv=ncv, rev=self._is_reversible, sparse=self._is_sparse))
+            if lag == 0:
+                its.append(np.zeros(k-1))
+            else:
+                T = self._base._transition_matrix(lag=lag)
+                its.append(_its(T, lag, k=k, ncv=ncv, rev=self._is_reversible, sparse=self._is_sparse))
 
         # Estimate error by bootstrapping
         if estimate_error is True:
