@@ -1,5 +1,4 @@
 from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
 from os.path import join
 import numpy
 
@@ -9,16 +8,14 @@ extensions = []
 extensions.append(
     Extension(
         'Markov_Models.analysis.src._assignment',
-        sources = [join(SRC_DIR, "_assignment.pyx"),
-                    join(SRC_DIR, "_assignment.c")],
+        sources = [join(SRC_DIR, "_assignment.pyx")],
         include_dirs=[numpy.get_include()]),
 )
 
 extensions.append(
     Extension(
         'Markov_Models.analysis.src._mle_tmat_prinz',
-        sources = [join(SRC_DIR, "_mle_tmat_prinz.pyx"),
-                    join(SRC_DIR, "_mle_tmat_prinz.c")],
+        sources = [join(SRC_DIR, "_mle_tmat_prinz.pyx")],
         include_dirs=[numpy.get_include()]),
 )
 
@@ -36,7 +33,7 @@ setup(
         'msmtools',
         'numpy',
         'scipy',
-        'sklearn'
+        'scikit-learn'
     ],
     ext_modules=extensions,
     zip_safe = False,
