@@ -1,7 +1,10 @@
 from .spectral import eigen_values, stationary_distribution
+
 import numpy as np
 from scipy.linalg import solve
-from msmtools.estimation.dense import tmatrix_sampler
+from pyemma.msm import its as _implied_timescales
+from multiprocessing import cpu_count
+
 
 class ImpliedTimescaleClass(object):
     ''' Implied Timescales
@@ -32,52 +35,30 @@ class ImpliedTimescaleClass(object):
     def __init__(self, base):
         self._is_sparse = base._is_sparse
         self._is_reversible = base._is_reversible
-        self._base = base
+        self.dtraj = base.dtraj
+        self.lag = base.lag
 
     def implied_timescales(self, lags=None, **kwargs):
-        estimate_error = kwargs.get('estimate_error', False)
-        ncv = kwargs.get('ncv', None)
-        n_splits = kwargs.get('n_splits', 10)
-        n_bootstraps = kwargs.get('n_bootstraps', 1000)
         k = kwargs.get('k', None)
-        k = _get_n_timescales(self, k)
-
-        # Implied timescales function
-        def _its(T, lag, k=k, ncv=ncv, rev=self._is_reversible, sparse=self._is_sparse):
-            w = eigen_values(T, k=k, ncv=ncv, rev=rev, sparse=sparse)
-            return -lag / np.log(abs(w[1:]))
+        errors = kwargs.get('errors', None)
+        n_samples = kwargs.get('n_samples', 100)
+        n_jobs = kwargs.get('n_jobs', cpu_count())
+        if n_jobs == -1 or n_jobs == None:
+            n_jobs = cpu_count()
 
         # Prepare lagtimes
         lags =  _get_lagtimes(self, lags)
 
         # Calculate implied timescales from full trajectory data
-        its = []
-        for lag in lags:
-            if lag == 0:
-                its.append(np.zeros(k-1))
-            else:
-                T = self._base._transition_matrix(lag=lag)
-                its.append(_its(T, lag, k=k, ncv=ncv, rev=self._is_reversible, sparse=self._is_sparse))
+        its = _implied_timescales(self.dtraj, lags=lags, nits=k,
+                                  reversible=self._is_reversible,
+                                  errors=errors, nsamples=n_samples,
+                                  n_jobs=n_jobs)
 
-        # Estimate error by bootstrapping
-        if estimate_error is True:
-            # Use PyEMMA's Sampling reversible MSM with fixed equilibrium distribution
-            error = []
-            for lag in lags:
-                if lag == 0:
-                    error.append(np.zeros(k-1))
-                else:
-                    C = self._base._count_matrix(lag=lag)
-                    sampler = tmatrix_sampler.TransitionMatrixSampler(C, reversible=self._is_reversible)
-                    samples = sampler.sample(n_bootstraps)
-                    error.append(np.array([
-                        _its(T, lag, k=k, ncv=ncv,
-                        rev=self._is_reversible, sparse=self._is_sparse)
-                        for T in samples]).std(0))
-            return np.squeeze(np.array(its)), np.squeeze(np.array(error))
-        else:
-            return np.squeeze(np.array(its))
-
+        if errors == None:
+            return its.timescales
+        elif errors == 'bayes':
+            return its.timescales, its.sample_std
 
 def mfpt(T, origin, target):
     def mfpt_solver(T, target):
@@ -104,17 +85,9 @@ def mfpt(T, origin, target):
 def _get_lagtimes(self, lags):
     # prepare lag as list
     if lags is None:
-        lags = [self._base.lag]
+        lags = [self.lag]
     if type(lags) == int:
         lags = [lags]
+    elif type(lags) == np.ndarray:
+        lags = list(lags)
     return lags
-
-def _get_n_timescales(self, k):
-    # prepare number of implied timescales
-    if k == None:
-        # for sparse methods must be 1 less than max
-        n_its = np.amax([self._base._N - 2, 2])
-    else:
-        # first timescale is inifinity
-        n_its = k + 1
-    return n_its

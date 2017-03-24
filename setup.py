@@ -29,6 +29,7 @@ setup(
 
     packages = ['Markov_Models'],
     install_requires=[
+        'bhmm',
         'hmmlearn',
         'msmtools',
         'numpy',
