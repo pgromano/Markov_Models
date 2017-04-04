@@ -32,9 +32,9 @@ class BaseMicroMSM(object):
             stride = kwargs.get('stride', 1)
             self._N = self._base.n_microstates = N
             if method.lower() == 'kmeans':
-                self.centroids, self.labels = mm.models.cluster._KMeans(self, stride=stride, tol=tol, max_iter=max_iter, **kwargs)
+                self.centroids, self.labels = mm.models.cluster._KMeans(self, **kwargs)
             elif method.lower() == 'minibatchkmeans':
-                self.centroids, self.labels = mm.models.cluster._MiniBatchKMeans(self, stride=stride, tol=tol, max_iter=max_iter, **kwargs)
+                self.centroids, self.labels = mm.models.cluster._MiniBatchKMeans(self, **kwargs)
 
         self.lag = lag
         self._C = mm.analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
