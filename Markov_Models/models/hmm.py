@@ -84,8 +84,8 @@ def _GaussianHMM(self, stride=1, tol=1e-5, n_iter=500, **kwargs):
         warnings.filterwarnings("ignore",category=DeprecationWarning)
         if self._is_sparse:
             alg.fit(csr_matrix(train))
-            self.dtraj = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
+            self.disc_data = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
         else:
             alg.fit(train)
-            self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+            self.disc_data = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
     self.centroids = alg.means_

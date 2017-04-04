@@ -72,11 +72,12 @@ def _KMeans(self, stride=1, tol=1e-5, max_iter=500, **kwargs):
     # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
         alg.fit(csr_matrix(train))
-        self.dtraj = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
+        labels = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
     else:
         alg.fit(train)
-        self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
-    self.centroids = alg.cluster_centers_
+        labels = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    centroids = alg.cluster_centers_
+    return centroids, labels
 
 
 from sklearn.cluster import MiniBatchKMeans
@@ -179,8 +180,9 @@ def _MiniBatchKMeans(self, stride=1, **kwargs):
     # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
         alg.fit(csr_matrix(train))
-        self.dtraj = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
+        labels = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
     else:
         alg.fit(train)
-        self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
-    self.centroids = alg.cluster_centers_
+        labels = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    centroids = alg.cluster_centers_
+    return centroids, labels

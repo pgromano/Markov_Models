@@ -1,7 +1,7 @@
-from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 
-def _KNeighborsClassifier(self, centroids=None, clusters=None, **kwargs):
+from sklearn.neighbors import KNeighborsClassifier
+def _KNeighborsClassifier(self, data=None, labels=None, **kwargs):
     '''Classifier implementing the k-nearest neighbors vote.
     Read more in the :ref:`User Guide <classification>`.
     Parameters
@@ -58,15 +58,6 @@ def _KNeighborsClassifier(self, centroids=None, clusters=None, **kwargs):
        training data.
     https://en.wikipedia.org/wiki/K-nearest_neighbor_algorithm
     '''
-    # Determine centroid data
-    if centroids is None:
-        try:
-            c = self.centroids
-        except:
-            c = self._micro.centroids
-    else:
-        c = centroids
-
     # Pass key word arguments
     alg = KNeighborsClassifier(n_neighbors=1)
     for key,val in kwargs.items():
@@ -75,17 +66,31 @@ def _KNeighborsClassifier(self, centroids=None, clusters=None, **kwargs):
         else:
             setattr(alg,key,val)
 
-    # Fit centroid training data to clusters
-    if clusters == None:
+    # Data to fit
+    try:
+        c = self.centroids
+    except:
+        c = self._micro.centroids
+
+    # Fit centroid training data to labels
+    if labels is None:
         # All centroids are unique
         alg.fit(c, np.arange(c.shape[0]))
     else:
         # Each centroid is joined as crisp groups
-        alg.fit(c, clusters)
-    self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+        alg.fit(c, labels)
+
+    # Classify data
+    if data is None:
+        return [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    else:
+        if type(data) == list:
+            return [alg.predict(data[i]) for i in range(len(data))]
+        else:
+            return alg.predict(data)
 
 from sklearn.naive_bayes import GaussianNB
-def _GaussianNB(self, centroids=None, clusters=None, **kwargs):
+def _GaussianNB(self, data=None, labels=None, **kwargs):
     '''Naive Bayes classifier for multinomial models
     The multinomial Naive Bayes classifier is suitable for classification with
     discrete features (e.g., word counts for text classification). The
@@ -134,27 +139,38 @@ def _GaussianNB(self, centroids=None, clusters=None, **kwargs):
     Information Retrieval. Cambridge University Press, pp. 234-265.
     http://nlp.stanford.edu/IR-book/html/htmledition/naive-bayes-text-classification-1.html
     '''
-    # Determine centroid data
-    if centroids is None:
-        try:
-            c = self.centroids
-        except:
-            c = self._micro.centroids
-    else:
-        c = centroids
-
     # Pass key word arguments
     alg = GaussianNB()
     for key,val in kwargs.items():
         setattr(alg,key,val)
 
-    # Fit centroid training data to clusters
-    if clusters == None:
+    # Fit centroid training data to labels
+    if labels == None:
         # All centroids are unique
         alg.fit(c, np.arange(c.shape[0]))
     else:
         # Each centroid is joined as crisp groups
-        alg.fit(c, clusters)
+        alg.fit(c, labels)
 
-    # Classify all point in simulation
-    self.dtraj = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    # Data to fit
+    try:
+        c = self.centroids
+    except:
+        c = self._micro.centroids
+
+    # Fit centroid training data to labels
+    if labels is None:
+        # All centroids are unique
+        alg.fit(c, np.arange(c.shape[0]))
+    else:
+        # Each centroid is joined as crisp groups
+        alg.fit(c, labels)
+
+    # Classify data
+    if data is None:
+        return [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    else:
+        if type(data) == list:
+            return [alg.predict(data[i]) for i in range(len(data))]
+        else:
+            return alg.predict(data)
