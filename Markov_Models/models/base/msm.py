@@ -239,7 +239,7 @@ class BaseMacroMSM(object):
         return mm.analysis.timescales.mfpt(self._T, origin, target)
 
     def score(self, **kwargs):
-        return mm.models.score.Silhouette_Score(self._micro.centroids, self.metastable_labelss, **kwargs)
+        return mm.models.score.Silhouette_Score(self._micro.centroids, self.metastable_labels, **kwargs)
 
     def timescales(self, lags=None, estimate_error=False, **kwargs):
         def timescales(self, lags=None, **kwargs):
