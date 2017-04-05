@@ -24,6 +24,9 @@ def Markov_Chain(*args, estimator='KMeans', **kwargs):
     elif estimator.lower() == 'kmeans':
         from .cluster import KMeans
         return KMeans(*args, **kwargs)
+    elif estimator.lower() == 'meanshift':
+        from .cluster import MeanShift
+        return MeanShift(*args, **kwargs)
     elif estimator.lower() == 'minibatchkmeans':
         from .cluster import MiniBatchKMeans
         return MiniBatchKMeans(*args, **kwargs)
