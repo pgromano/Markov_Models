@@ -193,5 +193,5 @@ def _training_set(self, fraction=0.1, shuffle=True):
     if shuffle is True:
         idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
     else:
-        idx = [np.arange(self._base.n_samples[i])[::stride for i in range(self._base.n_sets)]
+        idx = [np.arange(self._base.n_samples[i])[::stride] for i in range(self._base.n_sets)]
     return np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
