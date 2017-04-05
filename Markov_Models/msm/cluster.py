@@ -185,13 +185,13 @@ def _MiniBatchKMeans(self, fraction=0.5, shuffle=True, **kwargs):
     centroids = alg.cluster_centers_
     return centroids, labels
 
-def _training_set(self, fraction=0.5, shuffle=True):
+def _training_set(self, fraction=0.1, shuffle=True):
     if fraction == 0 or fraction > 1:
         raise AttributeError('''
         Fraction must be value 0 < f <= 1.''')
-    stride = [int(fraction*self._base.n_samples[i]) for i in range(self._base.n_sets)]
+    stride = int(1/fraction)
     if shuffle is True:
-        idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride[i]] for i in range(self._base.n_sets)]
+        idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
     else:
-        idx = [np.arange(self._base.n_samples[i])[::stride[i]] for i in range(self._base.n_sets)]
+        idx = [np.arange(self._base.n_samples[i])[::stride for i in range(self._base.n_sets)]
     return np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
