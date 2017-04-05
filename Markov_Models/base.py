@@ -16,3 +16,19 @@ class BaseModel(object):
         else:
             raise AttributeError('''
             Number of features must be the same for all sets of data!''')
+
+    def histogram(self, axis=None, bins=100):
+        if axis is None:
+            his, ext = np.histogramdd(np.concatenate([self.data[i] for i in range(self.n_sets)]), bins=bins)
+            extent = []
+            for k in range(self.n_features):
+                extent.append(ext[k].min())
+                extent.append(ext[k].max())
+            return his, extent
+        else:
+            his, ext = np.histogramdd(np.concatenate([self.data[i][:,axis] for i in range(self.n_sets)]), bins=bins)
+            extent = []
+            for k in range(len(ext)):
+                extent.append(ext[k].min())
+                extent.append(ext[k].max())
+            return his, extent
