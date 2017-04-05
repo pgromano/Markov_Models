@@ -35,7 +35,7 @@ class ImpliedTimescaleClass(object):
     def __init__(self, base):
         self._is_sparse = base._is_sparse
         self._is_reversible = base._is_reversible
-        self.dtraj = base.dtraj
+        self.labels = base.labels
         self.lag = base.lag
 
     def implied_timescales(self, lags=None, **kwargs):
@@ -50,7 +50,7 @@ class ImpliedTimescaleClass(object):
         lags =  _get_lagtimes(self, lags)
 
         # Calculate implied timescales from full trajectory data
-        its = _implied_timescales(self.dtraj, lags=lags, nits=k,
+        its = _implied_timescales(self.labels, lags=lags, nits=k,
                                   reversible=self._is_reversible,
                                   errors=errors, nsamples=n_samples,
                                   n_jobs=n_jobs)
