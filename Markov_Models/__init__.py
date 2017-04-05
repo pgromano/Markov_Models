@@ -1,3 +1,2 @@
-from .api import MSM, HMM, Markov_Chain
-from . import base
-from . import analysis, load, models, util
+from .api import MSM, Markov_Chain
+from . import analysis, base, cluster, load, mixture, msm, util
