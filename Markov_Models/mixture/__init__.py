@@ -1,0 +1,2 @@
+from .BayesianGaussianMixture import _BayesianGaussianMixture as BayesianGaussianMixture
+from .GaussianMixture import _GaussianMixture as GaussianMixture
