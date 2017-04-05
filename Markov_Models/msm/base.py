@@ -32,7 +32,7 @@ class BaseMicroMSM(object):
             method = kwargs.get('method', 'KMeans')
             tol = kwargs.get('tol', 1e-5)
             max_iter = kwargs.get('max_iter', 500)
-            stride = kwargs.get('stride', 0.5)
+            fraction = kwargs.get('fraction', 0.5)
             shuffle = kwargs.get('shuffle', True)
             self._N = self._base.n_microstates = N
             if method.lower() == 'kmeans':
