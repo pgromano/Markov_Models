@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 
 from sklearn.cluster import KMeans
-def _KMeans(self, stride=1, tol=1e-5, max_iter=500, **kwargs):
+def _KMeans(self, tol=1e-5, max_iter=500, fraction=0.5, shuffle=True, **kwargs):
     '''K-Means clustering
     Parameters
     ----------
@@ -66,8 +66,7 @@ def _KMeans(self, stride=1, tol=1e-5, max_iter=500, **kwargs):
         setattr(alg,key,val)
 
     # Shuffle data for training set
-    idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
-    train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+    train = _training_set(self, fraction=fraction, shuffle=shuffle)
 
     # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
@@ -81,7 +80,7 @@ def _KMeans(self, stride=1, tol=1e-5, max_iter=500, **kwargs):
 
 
 from sklearn.cluster import MiniBatchKMeans
-def _MiniBatchKMeans(self, stride=1, **kwargs):
+def _MiniBatchKMeans(self, fraction=0.5, shuffle=True, **kwargs):
     '''Mini-Batch K-Means clustering
     Parameters
     ----------
@@ -174,8 +173,7 @@ def _MiniBatchKMeans(self, stride=1, **kwargs):
         setattr(alg,key,val)
 
     # Shuffle data for training set
-    idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride] for i in range(self._base.n_sets)]
-    train = np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])
+    train = _training_set(self, fraction=fraction, shuffle=shuffle)
 
     # Fit training set Dense/Sparse and predict datasets in discrete coordinates
     if self._is_sparse:
@@ -186,3 +184,14 @@ def _MiniBatchKMeans(self, stride=1, **kwargs):
         labels = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
     centroids = alg.cluster_centers_
     return centroids, labels
+
+def _training_set(self, fraction=0.5, shuffle=True):
+    if fraction == 0 or fraction > 1:
+        raise AttributeError('''
+        Fraction must be value 0 < f <= 1.''')
+    stride = [int(fraction*self._base.n_samples[i]) for i in range(self._base.n_sets)]
+    if shuffle is True:
+        idx = [np.random.permutation(np.arange(self._base.n_samples[i]))[::stride[i]] for i in range(self._base.n_sets)]
+    else:
+        idx = [np.arange(self._base.n_samples[i])[::stride[i]] for i in range(self._base.n_sets)]
+    return np.concatenate([self._base.data[i][idx[i],:] for i in range(self._base.n_sets)])

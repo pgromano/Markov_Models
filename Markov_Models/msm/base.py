@@ -1,4 +1,7 @@
-import Markov_Models as mm
+from . import classifier as _classifier
+from . import cluster as _cluster
+from . import score as _score
+from .. import analysis
 import warnings
 import numpy as np
 import multiprocessing as mp
@@ -22,29 +25,30 @@ class BaseMicroMSM(object):
                 self.centroids = centroids
                 self._N = self._base.n_microstates = centroids.shape[0]
                 if method.lower() == 'kneighborsclassifier':
-                    self.labels = mm.models.MSM.classifier._KNeighborsClassifier(self, **kwargs)
+                    self.labels = _classifier._KNeighborsClassifier(self, **kwargs)
                 if method.lower() == 'gaussiannb':
-                    self.labels = mm.models.MSM.classifier._GaussianNB(self, **kwargs)
+                    self.labels = _classifier._GaussianNB(self, **kwargs)
         else:
             method = kwargs.get('method', 'KMeans')
             tol = kwargs.get('tol', 1e-5)
             max_iter = kwargs.get('max_iter', 500)
-            stride = kwargs.get('stride', 1)
+            stride = kwargs.get('stride', 0.5)
+            shuffle = kwargs.get('shuffle', True)
             self._N = self._base.n_microstates = N
             if method.lower() == 'kmeans':
-                self.centroids, self.labels = mm.models.MSM.cluster._KMeans(self, **kwargs)
+                self.centroids, self.labels = _cluster._KMeans(self, **kwargs)
             elif method.lower() == 'minibatchkmeans':
-                self.centroids, self.labels = mm.models.MSM.cluster._MiniBatchKMeans(self, **kwargs)
+                self.centroids, self.labels = _cluster._MiniBatchKMeans(self, **kwargs)
 
         self.lag = lag
-        self._C = mm.analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
+        self._C = analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
             if self._is_force_db is True:
-                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+                self._T = analysis.transition_matrix.sym_T_estimator(self._C)
             else:
-                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
+                self._T = analysis.transition_matrix.rev_T_estimator(self._C)
         else:
-            self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
+            self._T = analysis.transition_matrix.nonrev_T_matrix(self._C)
 
 
     def predict(self, data, method='KNeighborsClassifier', **kwargs):
@@ -52,12 +56,12 @@ class BaseMicroMSM(object):
             raise AttributeError('''
             No fit instance has been run! Fit data, before ''')
         if method.lower() == 'kneighborsclassifier':
-            return mm.models.MSM.classifier._KNeighborsClassifier(self, data=data, **kwargs)
+            return _classifier._KNeighborsClassifier(self, data=data, **kwargs)
         if method.lower() == 'gaussiannb':
-            return mm.models.MSM.classifier._GaussianNB(self, data=data, **kwargs)
+            return _classifier._GaussianNB(self, data=data, **kwargs)
 
     def _count_matrix(self, lag=1):
-        return mm.analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
+        return analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
 
     def _transition_matrix(self, lag=None):
         if lag is not None:
@@ -66,11 +70,11 @@ class BaseMicroMSM(object):
             C = self._C
         if self._is_reversible is True:
             if self._is_force_db is True:
-                return mm.analysis.transition_matrix.sym_T_estimator(C)
+                return analysis.transition_matrix.sym_T_estimator(C)
             else:
-                return mm.analysis.transition_matrix.rev_T_estimator(C)
+                return analysis.transition_matrix.rev_T_estimator(C)
         else:
-            return mm.analysis.transition_matrix.nonrev_T_matrix(C)
+            return analysis.transition_matrix.nonrev_T_matrix(C)
 
     @property
     def count_matrix(self):
@@ -94,13 +98,13 @@ class BaseMicroMSM(object):
 
     @property
     def stationary_distribution(self):
-        return mm.analysis.spectral.stationary_distribution(self._T, sparse=self._is_sparse)
+        return analysis.spectral.stationary_distribution(self._T, sparse=self._is_sparse)
 
     def eigenvalues(self, k=None, ncv=None):
-        return mm.analysis.spectral.eigen_values(self._T, k=k, ncv=ncv, sparse=self._is_sparse, rev=self._is_reversible)
+        return analysis.spectral.eigen_values(self._T, k=k, ncv=ncv, sparse=self._is_sparse, rev=self._is_reversible)
 
     def _eigenvectors(self, k=None, ncv=None, left=True, right=True):
-        return mm.analysis.spectral.eigen_vectors(self._T, k=k, ncv=ncv, left=left, right=right, sparse=self._is_sparse, rev=self._is_reversible)
+        return analysis.spectral.eigen_vectors(self._T, k=k, ncv=ncv, left=left, right=right, sparse=self._is_sparse, rev=self._is_reversible)
 
     def left_eigenvector(self, k=None, ncv=None):
         return self._eigenvectors(k=k, ncv=ncv, left=True, right=False)
@@ -109,10 +113,10 @@ class BaseMicroMSM(object):
         return self._eigenvectors(k=k, ncv=ncv, left=False, right=True)
 
     def mfpt(self, origin, target):
-        return mm.analysis.timescales.mfpt(self._T, origin, target)
+        return analysis.timescales.mfpt(self._T, origin, target)
 
     def timescales(self, lags=None, **kwargs):
-        its = mm.analysis.timescales.ImpliedTimescaleClass(self)
+        its = analysis.timescales.ImpliedTimescaleClass(self)
         return its.implied_timescales(lags=lags, **kwargs)
 
     #def update(self, **kwargs):
@@ -153,7 +157,7 @@ class BaseMacroMSM(object):
         if lag is None:
             lag = self.lag
 
-        if self._N >= self._micro._N-1:
+        if self._N > self._micro._N-1:
             raise AttributeError(
                 "Number of macrostates cannot be greater than N-1 of number of microstates.")
         if self._N >= 4000:
@@ -170,22 +174,22 @@ class BaseMacroMSM(object):
                 Too few macrostates to use the sparse method! Update to sparse=False''')
 
         if method.lower() == 'pcca':
-            mm.analysis.coarse_grain.PCCA(self, n_macrostates, lag=lag)
+            analysis.coarse_grain.PCCA(self, n_macrostates, lag=lag)
         elif method.lower() == 'hmm':
-            mm.analysis.coarse_grain.HMM(self, n_macrostates)
+            analysis.coarse_grain.HMM(self, n_macrostates)
         elif method.lower() =='gmm':
-            mm.analysis.coarse_grain.GMM(self, n_macrostates)
+            analysis.coarse_grain.GMM(self, n_macrostates)
         else:
             raise AttributeError('Method '+str(method)+' is not implemented!')
 
-        self._C = mm.analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
+        self._C = analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
             if self._is_force_db is True:
-                self._T = mm.analysis.transition_matrix.sym_T_estimator(self._C)
+                self._T = analysis.transition_matrix.sym_T_estimator(self._C)
             else:
-                self._T = mm.analysis.transition_matrix.rev_T_estimator(self._C)
+                self._T = analysis.transition_matrix.rev_T_estimator(self._C)
         else:
-            self._T = mm.analysis.transition_matrix.nonrev_T_matrix(self._C)
+            self._T = analysis.transition_matrix.nonrev_T_matrix(self._C)
 
     # TODO: Rewrite all of this nonsense. This should predict the macrostates from a given subset of data
     def predict(self, data, method='KNeighborsClassifier', **kwargs):
@@ -193,14 +197,14 @@ class BaseMacroMSM(object):
             raise AttributeError('''
             Microstate fitting must be performed prior to macrostate prediction.''')
         if method.lower() == 'kneighborsclassifier':
-            return mm.models.MSM.classifier._KNeighborsClassifier(self, data=data, labels=self.metastable_labels-1, **kwargs)
+            return _classifier._KNeighborsClassifier(self, data=data, labels=self.metastable_labels-1, **kwargs)
         if method.lower() == 'gaussiannb':
-            return mm.models.MSM.classifier._GaussianNB(self, data=data, labels=self.metastable_labels-1, **kwargs)
+            return _classifier._GaussianNB(self, data=data, labels=self.metastable_labels-1, **kwargs)
 
     def _count_matrix(self, lag=None):
         if lag is None:
             lag = self.lag
-        return mm.analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
+        return analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
 
     def _transition_matrix(self, lag=None):
         if lag is not None:
@@ -209,11 +213,11 @@ class BaseMacroMSM(object):
             C = self._C
         if self._is_reversible is True:
             if self._is_force_db is True:
-                return mm.analysis.transition_matrix.sym_T_estimator(C)
+                return analysis.transition_matrix.sym_T_estimator(C)
             else:
-                return mm.analysis.transition_matrix.rev_T_estimator(C)
+                return analysis.transition_matrix.rev_T_estimator(C)
         else:
-            return mm.analysis.transition_matrix.nonrev_T_matrix(C)
+            return analysis.transition_matrix.nonrev_T_matrix(C)
 
     @property
     def count_matrix(self):
@@ -237,13 +241,13 @@ class BaseMacroMSM(object):
 
     @property
     def stationary_distribution(self):
-        return mm.analysis.spectral.stationary_distribution(self._T, sparse=self._is_sparse)
+        return analysis.spectral.stationary_distribution(self._T, sparse=self._is_sparse)
 
     def eigenvalues(self, k=None, ncv=None):
-        return mm.analysis.spectral.eigen_values(self._T, k=k, ncv=ncv, sparse=self._is_sparse, rev=self._is_reversible)
+        return analysis.spectral.eigen_values(self._T, k=k, ncv=ncv, sparse=self._is_sparse, rev=self._is_reversible)
 
     def _eigenvectors(self, k=None, ncv=None, left=True, right=True):
-        return mm.analysis.spectral.eigen_vectors(self._T, k=k, ncv=ncv, left=left, right=right, sparse=self._is_sparse, rev=self._is_reversible)
+        return analysis.spectral.eigen_vectors(self._T, k=k, ncv=ncv, left=left, right=right, sparse=self._is_sparse, rev=self._is_reversible)
 
     def left_eigenvector(self, k=None, ncv=None):
         return self._eigenvectors(k=k, ncv=ncv, left=True, right=False)
@@ -252,14 +256,14 @@ class BaseMacroMSM(object):
         return self._eigenvectors(k=k, ncv=ncv, left=False, right=True)
 
     def mfpt(self, origin, target):
-        return mm.analysis.timescales.mfpt(self._T, origin, target)
+        return analysis.timescales.mfpt(self._T, origin, target)
 
     def score(self, **kwargs):
-        return mm.models.MSM.score.Silhouette_Score(self._micro.centroids, self.metastable_labels, **kwargs)
+        return _score.Silhouette_Score(self._micro.centroids, self.metastable_labels, **kwargs)
 
     def timescales(self, lags=None, estimate_error=False, **kwargs):
         def timescales(self, lags=None, **kwargs):
-            its = mm.analysis.timescales.ImpliedTimescaleClass(self)
+            its = analysis.timescales.ImpliedTimescaleClass(self)
             return its.implied_timescales(lags=lags, **kwargs)
 
     #def update(self, **kwargs):
