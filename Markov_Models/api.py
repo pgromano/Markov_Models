@@ -8,7 +8,8 @@ class MSM(BaseModel):
         self.microstates = BaseMicroMSM(self)
         self.macrostates = BaseMacroMSM(self)
 
-def Markov_Chain(*args, estimator='KMeans', **kwargs):
+def Markov_Chain(*args, **kwargs):
+    estimator = kwargs.get('estimator', 'KMeans')
     if estimator.lower() == 'affinitypropagation':
         from .cluster import AffinityPropagation
         return AffinityPropagation(*args, **kwargs)
