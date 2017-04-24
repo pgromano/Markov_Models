@@ -6,6 +6,7 @@ class BaseModel(object):
         self._is_reversible = kwargs.get('rev', True)
         self._is_sparse = kwargs.get('sparse', False)
 
+        data = _check_data_structure(data)
         self.data = data
         self.n_sets = len(data)
         self.n_samples = [self.data[i].shape[0] for i in range(self.n_sets)]
@@ -32,3 +33,17 @@ class BaseModel(object):
                 extent.append(ext[k].min())
                 extent.append(ext[k].max())
             return his, extent
+
+def _check_data_structure(data):
+    if isinstance(data, list):
+        return data
+    elif isinstance(data, np.ndarray):
+        if len(data.shape) == 1:
+            return [data.reshape(-1, 1)]
+        elif len(data.shape) == 2:
+            return [data]
+        elif len(data) == 3:
+            return data
+        else:
+            raise AttributeError('''
+            Data must be of shape (n_samples, n_features).''')

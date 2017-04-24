@@ -4,6 +4,7 @@ from ..analysis import transition_matrix as Tmat
 from ..base import BaseModel
 from sklearn.base import ClusterMixin, TransformerMixin
 from sklearn.cluster import KMeans
+
 class _KMeans(BaseModel, ClusterMixin, TransformerMixin):
     '''K-Means clustering
     Parameters
