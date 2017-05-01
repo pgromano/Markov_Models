@@ -9,27 +9,30 @@ class MSM(BaseModel):
         self.macrostates = BaseMacroMSM(self)
 
 def Markov_Chain(*args, **kwargs):
-    estimator = kwargs.get('estimator', 'KMeans')
-    if estimator.lower() == 'affinitypropagation':
-        from .cluster import AffinityPropagation
-        return AffinityPropagation(*args, **kwargs)
-    elif estimator.lower() == 'bayesiangaussianmixture':
-        from .mixture import BayesianGaussianMixture
-        return BayesianGaussianMixture(*args, **kwargs)
-    elif estimator.lower() == 'birch':
-        from .cluster import Birch
-        return Birch(*args, **kwargs)
-    elif estimator.lower() == 'gaussianmixture':
-        from .mixture import GaussianMixture
-        return GaussianMixture(*args, **kwargs)
-    elif estimator.lower() == 'kmeans':
-        from .cluster import KMeans
-        return KMeans(*args, **kwargs)
-    elif estimator.lower() == 'meanshift':
-        from .cluster import MeanShift
-        return MeanShift(*args, **kwargs)
-    elif estimator.lower() == 'minibatchkmeans':
-        from .cluster import MiniBatchKMeans
-        return MiniBatchKMeans(*args, **kwargs)
+    if len(args) == 0:
+        return ['AffinityPropagation','BayesianGaussianMixture','GaussianMixture','KMeans','MeanShift','MiniBatchKMeans']
     else:
-        raise AttributeError(estimator+' estimator not implemented.')
+        estimator = kwargs.get('estimator', 'KMeans')
+        if estimator.lower() == 'affinitypropagation':
+            from .cluster import AffinityPropagation
+            return AffinityPropagation(*args, **kwargs)
+        elif estimator.lower() == 'bayesiangaussianmixture':
+            from .mixture import BayesianGaussianMixture
+            return BayesianGaussianMixture(*args, **kwargs)
+        elif estimator.lower() == 'birch':
+            from .cluster import Birch
+            return Birch(*args, **kwargs)
+        elif estimator.lower() == 'gaussianmixture':
+            from .mixture import GaussianMixture
+            return GaussianMixture(*args, **kwargs)
+        elif estimator.lower() == 'kmeans':
+            from .cluster import KMeans
+            return KMeans(*args, **kwargs)
+        elif estimator.lower() == 'meanshift':
+            from .cluster import MeanShift
+            return MeanShift(*args, **kwargs)
+        elif estimator.lower() == 'minibatchkmeans':
+            from .cluster import MiniBatchKMeans
+            return MiniBatchKMeans(*args, **kwargs)
+        else:
+            raise AttributeError(estimator+' estimator not implemented.')

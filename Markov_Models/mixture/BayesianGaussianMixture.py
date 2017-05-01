@@ -153,9 +153,9 @@ class _BayesianGaussianMixture(BaseModel, ClusterMixin, TransformerMixin):
         if fraction == 0 or fraction > 1:
             raise AttributeError('''
             Fraction must be value 0 < f <= 1.''')
-        stride = [int(fraction*self.n_samples[i]) for i in range(self.n_sets)]
+        stride = int(1/fraction)
         if shuffle is True:
-            idx = [np.random.permutation(np.arange(self.n_samples[i]))[::stride[i]] for i in range(self.n_sets)]
+            idx = [np.random.permutation(np.arange(self.n_samples[i]))[::stride] for i in range(self.n_sets)]
         else:
-            idx = [np.arange(self.n_samples[i])[::stride[i]] for i in range(self.n_sets)]
+            idx = [np.arange(self.n_samples[i])[::stride] for i in range(self.n_sets)]
         return np.concatenate([self.data[i][idx[i],:] for i in range(self.n_sets)])

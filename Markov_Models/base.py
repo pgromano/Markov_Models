@@ -6,7 +6,7 @@ class BaseModel(object):
         self._is_reversible = kwargs.get('rev', True)
         self._is_sparse = kwargs.get('sparse', False)
 
-        data = _check_data_structure(data)
+        #data = _check_data_structure(data)
         self.data = data
         self.n_sets = len(data)
         self.n_samples = [self.data[i].shape[0] for i in range(self.n_sets)]

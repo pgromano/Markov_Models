@@ -53,7 +53,7 @@ class _AffinityPropagation(BaseModel, ClusterMixin, TransformerMixin):
             raise AttributeError('''
             No instance found. Model must be fit first.''')
 
-    def _training_set(self, fraction=0.1, shuffle=True):
+    def _training_set(self, fraction=0.5, shuffle=True):
         if fraction == 0 or fraction > 1:
             raise AttributeError('''
             Fraction must be value 0 < f <= 1.''')
