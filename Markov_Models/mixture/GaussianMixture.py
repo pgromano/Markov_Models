@@ -126,6 +126,8 @@ class _GaussianMixture(BaseModel, ClusterMixin, TransformerMixin):
         self._T = self._transition_matrix()
 
         # Inherit Methods
+        self.aic = gm.aic
+        self.bic = gm.bic
         self.predict = gm.predict
         self.predict_prob = gm.predict_proba
         self.sample = gm.sample
