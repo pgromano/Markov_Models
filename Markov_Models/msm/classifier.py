@@ -1,6 +1,7 @@
 import numpy as np
 
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import MinMaxScaler
 def _KNeighborsClassifier(self, data=None, labels=None, **kwargs):
     '''Classifier implementing the k-nearest neighbors vote.
     Read more in the :ref:`User Guide <classification>`.
@@ -59,35 +60,41 @@ def _KNeighborsClassifier(self, data=None, labels=None, **kwargs):
     https://en.wikipedia.org/wiki/K-nearest_neighbor_algorithm
     '''
     # Pass key word arguments
-    alg = KNeighborsClassifier(n_neighbors=1)
+    clf = KNeighborsClassifier(n_neighbors=1)
     for key,val in kwargs.items():
         if key == "n_neighbors" and val != 1:
             warnings.warn('''Centroid assignment is not designed for multiple assignments. Setting n_neighbors = 1''')
         else:
-            setattr(alg,key,val)
+            setattr(clf,key,val)
+
+    # Scale data
+    axes = np.squeeze(np.split(self._base.extent, self._base.n_features)).T
+    scaler = MinMaxScaler(feature_range=(0,1))
+    scaler.fit(axes)
 
     # Data to fit
     try:
-        c = self.centroids
+        c = scaler.transform(self.centroids)
     except:
-        c = self._micro.centroids
+        c = scaler.transform(self._micro.centroids)
 
     # Fit centroid training data to labels
     if labels is None:
         # All centroids are unique
-        alg.fit(c, np.arange(c.shape[0]))
+        clf.fit(c, np.arange(c.shape[0]))
     else:
         # Each centroid is joined as crisp groups
-        alg.fit(c, labels)
+        clf.fit(c, labels)
 
     # Classify data
     if data is None:
-        return [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+        return [clf.predict(scaler.transform(self._base.data[i])) for i in range(self._base.n_sets)]
     else:
         if type(data) == list:
-            return [alg.predict(data[i]) for i in range(len(data))]
+            return [clf.predict(scaler.transform(data[i])) for i in range(len(data))]
         else:
-            return alg.predict(data)
+            return clf.predict(scaler.transform(data))
+
 
 from sklearn.naive_bayes import GaussianNB
 def _GaussianNB(self, data=None, labels=None, **kwargs):
