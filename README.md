@@ -1,12 +1,13 @@
 # Markov Models
 
-The `Markov_Models` package builds Markov chains from datasets using learning methods in `scikit-learn`. 
+The `Markov_Models` package builds Markov chains from datasets using `scikit-learn` for unsupervised classification. The `Markov_Chain` module can be used to generally manipulate and cluster datasets, whereas the `MSM` module is intended for building Markov State Models and contains analysis tools consistent with the field.
 
 ### Installation
 
     python -m pip install -e . --user
 
 ### Usage
+A detailed example of generating a Markov State Model (MSM) can be found in [here]('./examples/standard_msm.ipynb').
 
     In [1]: import Markov_Models as mm
 
