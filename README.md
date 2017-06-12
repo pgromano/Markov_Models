@@ -7,7 +7,7 @@ The `Markov_Models` package builds Markov chains from datasets using `scikit-lea
     python -m pip install -e . --user
 
 ### Usage
-A detailed example of generating a Markov State Model (MSM) can be found in [here]('./examples/standard_msm.ipynb').
+A detailed example of generating a Markov State Model (MSM) can be found in [here](./examples/standard_msm.ipynb).
 
     In [1]: import Markov_Models as mm
 
