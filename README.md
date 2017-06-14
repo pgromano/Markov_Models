@@ -4,6 +4,8 @@ The `Markov_Models` package builds Markov chains from datasets using `scikit-lea
 
 ### Installation
 
+    git clone https://github.com/pgromano/Markov_Models.git
+    cd Markov_Models
     python -m pip install -e . --user
 
 ### Usage
