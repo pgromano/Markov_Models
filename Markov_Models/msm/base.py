@@ -14,13 +14,16 @@ class BaseMicroMSM(object):
         self._is_force_db = BaseModel._is_force_db
         self._is_reversible = BaseModel._is_reversible
         self._is_sparse = BaseModel._is_sparse
+        self.lag = BaseModel.lag
 
-    def fit(self, N=None, centroids=None, lag=1, **kwargs):
+    def fit(self, N=None, centroids=None, lag=None, **kwargs):
         if N is None:
             if centroids is None:
                 raise AttributeError('''
-                Number of microstates must be defined!''')
+                Neither number of microstates nor pre-computed centroids supplied.
+                ''')
             else:
+                # If given centroid data, label data with classifier `method`
                 method = kwargs.get('method', 'KNeighborsClassifier')
                 self.centroids = centroids
                 self._N = self._base.n_microstates = centroids.shape[0]
@@ -29,6 +32,7 @@ class BaseMicroMSM(object):
                 if method.lower() == 'gaussiannb':
                     self.labels = _classifier._GaussianNB(self, **kwargs)
         else:
+            # If number of microstates given, fit model with `method`
             method = kwargs.get('method', 'KMeans')
             tol = kwargs.get('tol', 1e-5)
             max_iter = kwargs.get('max_iter', 500)
@@ -40,7 +44,13 @@ class BaseMicroMSM(object):
             elif method.lower() == 'minibatchkmeans':
                 self.centroids, self.labels = _cluster._MiniBatchKMeans(self, **kwargs)
 
-        self.lag = lag
+        # If fit updates lag time, update microstate lag, else use base
+        if lag is None:
+            lag = self.lag
+        else:
+            self.lag = lag
+
+        # Build count and transition matrices
         self._C = analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
         if self._is_reversible is True:
             if self._is_force_db is True:
@@ -113,23 +123,23 @@ class BaseMicroMSM(object):
         return self._eigenvectors(k=k, ncv=ncv, left=False, right=True)
 
     def mfpt(self, origin, target):
-        return analysis.timescales.mfpt(self._T, origin, target)
+        return analysis.timescales.mfpt(self._T, origin, target, sparse=self._is_sparse)
+
+    def score(self, X, y=None, **kwargs):
+        if y is None:
+            y = self.predict(X)
+        return _score.Silhouette_Score(X, y, **kwargs)
 
     def timescales(self, lags=None, **kwargs):
         its = analysis.timescales.ImpliedTimescaleClass(self)
         return its.implied_timescales(lags=lags, **kwargs)
 
-    #def update(self, **kwargs):
-    #    for key, val in kwargs.items():
-    #        if key == 'lag':
-    #            self.lag = val
-    #            self._C = self._count_matrix(lag=val)
-    #            self._T = self._transition_matrix(lag=val)
-    #        elif key == 'rev':
-    #            self._base._is_reversible = self._is_reversible = val
-    #        elif key == 'sparse':
-    #            self._base._is_sparse = self._is_sparse = val
-
+    def update(self, **kwargs):
+        for key, val in kwargs.items():
+            if key == 'lag':
+                self.lag = val
+                self._C = self._count_matrix(lag=val)
+                self._T = self._transition_matrix(lag=val)
 
 class BaseMacroMSM(object):
     '''Macro level description of trajectory data, coarse grained via PCCA+
@@ -148,14 +158,16 @@ class BaseMacroMSM(object):
         self._is_reversible = BaseModel._is_reversible
         self._is_sparse = False
         self._micro = self._base.microstates
+        self.lag = self._micro.lag
 
     def fit(self, n_macrostates, lag=None, method='PCCA'):
         self._N = n_macrostates
         self._base.n_macrostates = n_macrostates
-        self.lag = self._micro.lag
 
         if lag is None:
             lag = self.lag
+        else:
+            self.lag = lag
 
         if self._N > self._micro._N-1:
             raise AttributeError(
@@ -173,12 +185,14 @@ class BaseMacroMSM(object):
                 raise AttributeError('''
                 Too few macrostates to use the sparse method! Update to sparse=False''')
 
-        if method.lower() == 'pcca':
-            analysis.coarse_grain.PCCA(self, n_macrostates, lag=lag)
+        if method.lower() =='gmm':
+            analysis.coarse_grain.GMM(self, n_macrostates)
+        elif method.lower() =='hc':
+            analysis.coarse_grain.HC(self, n_macrostates)
         elif method.lower() == 'hmm':
             analysis.coarse_grain.HMM(self, n_macrostates)
-        elif method.lower() =='gmm':
-            analysis.coarse_grain.GMM(self, n_macrostates)
+        elif method.lower() == 'pcca':
+            analysis.coarse_grain.PCCA(self, n_macrostates, lag=lag)
         else:
             raise AttributeError('Method '+str(method)+' is not implemented!')
 
@@ -256,7 +270,7 @@ class BaseMacroMSM(object):
         return self._eigenvectors(k=k, ncv=ncv, left=False, right=True)
 
     def mfpt(self, origin, target):
-        return analysis.timescales.mfpt(self._T, origin, target)
+        return analysis.timescales.mfpt(self._T, origin, target, sparse=self._is_sparse)
 
     def score(self, **kwargs):
         return _score.Silhouette_Score(self._micro.centroids, self.metastable_labels, **kwargs)
