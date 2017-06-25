@@ -3,6 +3,8 @@ from .spectral import eigen_values, stationary_distribution
 import numpy as np
 from scipy.linalg import solve
 from pyemma.msm import its as _implied_timescales
+from msmtools.analysis.dense.mean_first_passage_time import mfpt as _dense_mfpt
+from msmtools.analysis.sparse.mean_first_passage_time import mfpt as _sparse_mfpt
 from multiprocessing import cpu_count
 
 
@@ -60,27 +62,11 @@ class ImpliedTimescaleClass(object):
         elif errors == 'bayes':
             return its.timescales, its.sample_std
 
-def mfpt(T, origin, target):
-    def mfpt_solver(T, target):
-        dim = T.shape[0]
-        A = np.eye(dim) - T
-        A[target, :] = 0.0
-        A[target, target] = 1.0
-        b = np.ones(dim)
-        b[target] = 0.0
-        return solve(A, b)
-    pi = stationary_distribution(T)
-
-    """Stationary distribution restriced on starting set X"""
-    nuX = pi[origin]
-    piX = nuX / np.sum(nuX)
-
-    """Mean first-passage time to Y (for all possible starting states)"""
-    tY = mfpt_solver(T, target)
-
-    """Mean first-passage time from X to Y"""
-    tXY = np.dot(piX, tY[origin])
-    return tXY
+def mfpt(T, origin, target, sparse=False):
+    if sparse:
+        return _sparse_mfpt(T, origin, target)
+    else:
+        return _dense_mfpt(T, origin, target)
 
 def _get_lagtimes(self, lags):
     # prepare lag as list

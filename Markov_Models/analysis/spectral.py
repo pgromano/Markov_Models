@@ -28,20 +28,20 @@ def eigen_values(T, k=None, ncv=None, rev=True, sparse=False):
             ncv = min(T.shape[0], max(5*k + 1, 25))
         if rev is True:
             try:
-                w = _SparseEigenValuesRev(T, k=k, ncv=ncv)
+                w = _sparse_eigenvalues_rev(T, k=k, ncv=ncv)
             except:
-                w = _SparseEigenValuesNRev(T, k=k, ncv=ncv)
+                w = _sparse_eigenvalues_nrev(T, k=k, ncv=ncv)
         else:
-            w = _SparseEigenValuesNRev(T, k=k, ncv=ncv)
+            w = _sparse_eigenvalues_nrev(T, k=k, ncv=ncv)
         return w
     else:
         if rev is True:
             try:
-                w = _DenseEigenValuesRev(T, k=k)
+                w = _dense_eigenvalues_rev(T, k=k)
             except:
-                w = _DenseEigenValuesNRev(T, k=k)
+                w = _dense_eigenvalues_nrev(T, k=k)
         else:
-            w = _DenseEigenValuesNRev(T, k=k)
+            w = _dense_eigenvalues_nrev(T, k=k)
         if k is None:
             return w
         else:
@@ -74,19 +74,19 @@ def eigen_vectors(T, k=None, ncv=None, rev=True, left=True, right=True, sparse=F
             ncv = min(T.shape[0], max(5*k + 1, 25))
         if rev is True:
             try:
-                w, L, R = _SparseDecompositionRev(T, k=k, ncv=ncv)
+                w, L, R = _sparse_decomposition_rev(T, k=k, ncv=ncv)
             except:
-                w, L, R = _SparseDecompositionNRev(T, k=k, ncv=ncv)
+                w, L, R = _sparse_decomposition_nrev(T, k=k, ncv=ncv)
         else:
-            w, L, R = _SparseDecompositionNRev(T, k=k, ncv=ncv)
+            w, L, R = _sparse_decomposition_nrev(T, k=k, ncv=ncv)
     else:
         if rev is True:
             try:
-                w, L, R = _DenseDecompositionRev(T, k=k)
+                w, L, R = _dense_decomposition_rev(T, k=k)
             except:
-                w, L, R = _DenseDecompositionNRev(T, k=k)
+                w, L, R = _dense_decomposition_nrev(T, k=k)
         else:
-            w, L, R = _DenseDecompositionNRev(T, k=k)
+            w, L, R = _dense_decomposition_nrev(T, k=k)
 
     if left is True and right is True:
         return L, R
@@ -95,7 +95,7 @@ def eigen_vectors(T, k=None, ncv=None, rev=True, left=True, right=True, sparse=F
     elif left is False and right is True:
         return R
 
-def _DenseEigenValuesRev(T, k=None):
+def _dense_eigenvalues_rev(T, k=None):
     pi = stationary_distribution(T, sparse=False)
     Tsym = np.sqrt(pi)
     S = Tsym[:,None] * T / Tsym
@@ -106,7 +106,7 @@ def _DenseEigenValuesRev(T, k=None):
     else:
         return w[idx][:k].real
 
-def _DenseEigenValuesNRev(T, k=None):
+def _dense_eigenvalues_nrev(T, k=None):
     w, R = eig(T)
     idx = np.argsort(abs(w))[::-1]
     if k is None:
@@ -114,7 +114,7 @@ def _DenseEigenValuesNRev(T, k=None):
     else:
         return w[idx][:k].real
 
-def _SparseEigenValuesRev(T, k=6, ncv=None):
+def _sparse_eigenvalues_rev(T, k=6, ncv=None):
     # Symmetrize Transition Matrix
     pi = stationary_distribution(T, ncv=ncv, sparse=True)
     Tsym = np.sqrt(pi)
@@ -130,12 +130,12 @@ def _SparseEigenValuesRev(T, k=6, ncv=None):
     idx = np.argsort(abs(w))[::-1]
     return w[idx].real
 
-def _SparseEigenValuesNRev(T, k=6, ncv=None):
+def _sparse_eigenvalues_nrev(T, k=6, ncv=None):
     w = eigs(T, k=k, which='LM', ncv=ncv, return_eigenvectors=False)
     idx = np.argsort(abs(w))[::-1]
     return w[idx].real
 
-def _DenseDecompositionRev(T, k=None):
+def _dense_decomposition_rev(T, k=None):
     # Calculation stationary distribution
     pi = stationary_distribution(T, sparse=False)
 
@@ -167,7 +167,7 @@ def _DenseDecompositionRev(T, k=None):
     else:
         return w[:k].real, L[:,:k].real, R[:,:k].real
 
-def _DenseDecompositionNRev(T, k=None):
+def _dense_decomposition_nrev(T, k=None):
     # Diagonalize
     w, R = eig(T)
 
@@ -185,7 +185,7 @@ def _DenseDecompositionNRev(T, k=None):
     else:
         return w[:k].real, L[:,:k].real, R[:,:k].real
 
-def _SparseDecompositionRev(T, k=6, ncv=None):
+def _sparse_decomposition_rev(T, k=6, ncv=None):
     # Calculation stationary distribution
     pi = stationary_distribution(T, ncv=ncv, sparse=True)
 
@@ -218,7 +218,7 @@ def _SparseDecompositionRev(T, k=6, ncv=None):
     L[:, 0] = L[:, 0] *  tmp
     return w.real, L.real, R.real
 
-def _SparseDecompositionNRev(T, k=6, ncv=None):
+def _sparse_decomposition_nrev(T, k=6, ncv=None):
     wR, R = eigs(T, k=k, which='LM', ncv=ncv)
     wL, L = eigs(T.T, k=k, which='LM', ncv=ncv)
 
