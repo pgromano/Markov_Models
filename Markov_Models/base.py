@@ -5,6 +5,7 @@ class BaseModel(object):
         self._is_force_db = kwargs.get('db', False)
         self._is_reversible = kwargs.get('rev', True)
         self._is_sparse = kwargs.get('sparse', False)
+        self.lag = kwargs.get('lag', 1)
 
         #data = _check_data_structure(data)
         self.data = data

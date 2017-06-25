@@ -1,6 +1,6 @@
 import numpy as np
 
-def training_set(data, fraction=0.1, shuffle=True):
+def sample(data, fraction=0.1, shuffle=True):
     # Check fractions are within range
     if fraction == 0 or fraction > 1:
         raise AttributeError('''

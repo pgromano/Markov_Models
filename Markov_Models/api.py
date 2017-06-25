@@ -10,21 +10,24 @@ class MSM(BaseModel):
 
 def Markov_Chain(*args, **kwargs):
     if len(args) == 0:
-        return ['AffinityPropagation','BayesianGaussianMixture','GaussianMixture','KMeans','MeanShift','MiniBatchKMeans']
+        return ['AffinityPropagation','BayesianGaussianMixture','Birch','GaussianMixture','HMM','KMeans','MeanShift','MiniBatchKMeans']
     else:
         estimator = kwargs.get('estimator', 'KMeans')
         if estimator.lower() == 'affinitypropagation':
             from .cluster import AffinityPropagation
             return AffinityPropagation(*args, **kwargs)
-        elif estimator.lower() == 'bayesiangaussianmixture':
+        elif estimator.lower() == 'bayesiangmm':
             from .mixture import BayesianGaussianMixture
             return BayesianGaussianMixture(*args, **kwargs)
         elif estimator.lower() == 'birch':
             from .cluster import Birch
             return Birch(*args, **kwargs)
-        elif estimator.lower() == 'gaussianmixture':
+        elif estimator.lower() == 'gmm':
             from .mixture import GaussianMixture
             return GaussianMixture(*args, **kwargs)
+        elif estimator.lower() == 'hmm':
+            from .cluster import HMM
+            return HMM(*args, **kwargs)
         elif estimator.lower() == 'kmeans':
             from .cluster import KMeans
             return KMeans(*args, **kwargs)
