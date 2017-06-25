@@ -27,6 +27,9 @@ def transition_matrix(double[:,:] C, np.float tol, np.int max_iteration):
         for j in range(nstates):
             xs[i] = xs[i] + X[i,j]
             cs[i] = cs[i] + C[i,j]
+        if xs[i] == 0 or cs[i] == 0:
+            print('Null populated states!')
+            break
 
     iteration = 0
     while abs(liklihood-liklihood_prev) >= tol:
