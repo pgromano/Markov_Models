@@ -4,6 +4,7 @@ import numpy as np
 import copy, warnings
 from msmtools.analysis.api import _pcca_object as _PCCA
 from sklearn.preprocessing import MinMaxScaler as _MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier as _KNeighborsClassifier
 
 def PCCA(self, n_macrostates, lag=None):
     # Function to convert microstate trajectory to macrostate assignments
@@ -62,8 +63,9 @@ from sklearn.cluster import AgglomerativeClustering as _HC
 def HC(self, n_macrostates):
     scaler = _MinMaxScaler(feature_range=(0,1)).fit(self._micro.centroids)
     hc = _HC(n_clusters=n_macrostates).fit(scaler.transform(self._micro.centroids))
+    clf = _KNeighborsClassifier(n_neighbors=1).fit(scaler.transform(self._micro.centroids),hc.labels_)
 
-    self.labels = [hc.predict(scaler.transform(self._base.data[i])) for i in range(self._base.n_sets)]
+    self.labels = [clf.predict(scaler.transform(self._base.data[i])) for i in range(self._base.n_sets)]
     self.metastable_labels = hc.labels_
     self.metastable_sets = []
     for i in range(self._N):
