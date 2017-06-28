@@ -6,5 +6,5 @@ def crisp_assignment(dtraj, PCCA_sets):
     cdef long[:] PCCA_dtraj = np.zeros(nsamples, dtype=int)
 
     for i in range(nsamples):
-        PCCA_dtraj[i] = PCCA_sets[dtraj[i]] - 1
+        PCCA_dtraj[i] = PCCA_sets[dtraj[i]]
     return PCCA_dtraj

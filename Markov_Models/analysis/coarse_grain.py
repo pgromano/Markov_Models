@@ -1,4 +1,5 @@
 from . import src
+from .spectral import stationary_distribution as _sd
 
 import numpy as np
 import copy, warnings
@@ -24,13 +25,24 @@ def PCCA(self, n_macrostates, lag=None):
     self.memberships = copy.deepcopy(self._pcca.memberships)
     self.metastable_sets = copy.deepcopy(self._pcca.metastable_sets)
     self.metastable_labels = np.ones(self._micro._N, dtype=int)
-    for k, set in enumerate(self.metastable_sets):
-        self.metastable_labels[set] = k + 1
+    for k,state in enumerate(self.metastable_sets):
+        self.metastable_labels[state] = k 
 
     # Build discrete macrostate trajectories
     self.labels = [_assign_macrostates(self._micro.labels[i],
                     self.metastable_labels)
                     for i in range(self._base.n_sets)]
+
+    M = self.memberships
+    pi = _sd(T, ncv=None, sparse=self._is_sparse)
+
+    W = np.linalg.inv(np.dot(M.T, M))
+    A = np.dot(np.dot(M.T, T), M)
+    T_coarse = np.dot(W, A)
+
+    pi_coarse = np.dot(M.T, pi)
+    X = np.dot(np.diag(pi_coarse), T_coarse)
+    self._T = X / X.sum(axis=1)[:, None]
 
 # TODO: Implement BACE
 def BACE(self, n_macrostates):
@@ -45,7 +57,7 @@ def HMM(self, n_macrostates):
         self.metastable_labels = hmm.predict(self._micro.centroids)
         self.metastable_sets = []
         for i in range(self._N):
-            self.metastable_sets.append(np.where(hmm.labels_ == i)[0])
+            self.metastable_sets.append(np.where(self.metastable_labels == i)[0])
 
 from sklearn.mixture import GaussianMixture as _GMM
 def GMM(self, n_macrostates):
