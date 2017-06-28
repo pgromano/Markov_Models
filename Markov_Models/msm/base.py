@@ -197,13 +197,15 @@ class BaseMacroMSM(object):
             raise AttributeError('Method '+str(method)+' is not implemented!')
 
         self._C = analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
-        if self._is_reversible is True:
-            if self._is_force_db is True:
-                self._T = analysis.transition_matrix.sym_T_estimator(self._C)
+
+        if not method.lower() == 'pcca':
+            if self._is_reversible is True:
+                if self._is_force_db is True:
+                    self._T = analysis.transition_matrix.sym_T_estimator(self._C)
+                else:
+                    self._T = analysis.transition_matrix.rev_T_estimator(self._C)
             else:
-                self._T = analysis.transition_matrix.rev_T_estimator(self._C)
-        else:
-            self._T = analysis.transition_matrix.nonrev_T_matrix(self._C)
+                self._T = analysis.transition_matrix.nonrev_T_matrix(self._C)
 
     # TODO: Rewrite all of this nonsense. This should predict the macrostates from a given subset of data
     def predict(self, data, method='KNeighborsClassifier', **kwargs):
