@@ -26,7 +26,7 @@ def PCCA(self, n_macrostates, lag=None):
     self.metastable_sets = copy.deepcopy(self._pcca.metastable_sets)
     self.metastable_labels = np.ones(self._micro._N, dtype=int)
     for k,state in enumerate(self.metastable_sets):
-        self.metastable_labels[state] = k 
+        self.metastable_labels[state] = k
 
     # Build discrete macrostate trajectories
     self.labels = [_assign_macrostates(self._micro.labels[i],
@@ -69,7 +69,7 @@ def GMM(self, n_macrostates):
     self.bic = gmm.bic
     self.metastable_sets = []
     for i in range(self._N):
-        self.metastable_sets.append(np.where(gmm.labels_ == i)[0])
+        self.metastable_sets.append(np.where(self.metastable_labels == i)[0])
 
 from sklearn.cluster import AgglomerativeClustering as _HC
 def HC(self, n_macrostates):
