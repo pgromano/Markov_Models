@@ -185,6 +185,43 @@ def _MiniBatchKMeans(self, fraction=0.5, shuffle=True, **kwargs):
     centroids = alg.cluster_centers_
     return centroids, labels
 
+from ..cluster.src import kmedoids_
+def _KMedoids(self, tol=1e-5, max_iter=500, fraction=0.5, shuffle=True, **kwargs):
+    '''k-medoids class.
+    Parameters
+    ----------
+    n_clusters : int, optional, default: 8
+        How many medoids. Must be positive.
+    distance_metric : string, optional, default: 'euclidean'
+        What distance metric to use.
+    clustering : {'pam'}, optional, default: 'pam'
+        What clustering mode to use.
+    init : {'random', 'heuristic'}, optional, default: 'heuristic'
+        Specify medoid initialization.
+    max_iter : int, optional, default : 300
+        Specify the maximum number of iterations when fitting.
+    random_state : int, optional, default: None
+        Specify random state for the random number generator.
+    '''
+
+    # Prepare clustering method
+    alg = kmedoids_.KMedoids(n_clusters=self._N)
+    for key,val in kwargs.items():
+        setattr(alg,key,val)
+
+    # Shuffle data for training set
+    train = _training_set(self, fraction=fraction, shuffle=shuffle)
+
+    # Fit training set Dense/Sparse and predict datasets in discrete coordinates
+    if self._is_sparse:
+        alg.fit(csr_matrix(train))
+        labels = [alg.predict(csr_matrix(self._base.data[i])) for i in range(self._base.n_sets)]
+    else:
+        alg.fit(train)
+        labels = [alg.predict(self._base.data[i]) for i in range(self._base.n_sets)]
+    centroids = alg.cluster_centers_
+    return centroids, labels
+
 def _training_set(self, fraction=0.1, shuffle=True):
     if fraction == 0 or fraction > 1:
         raise AttributeError('''

@@ -10,7 +10,7 @@ class MSM(BaseModel):
 
 def Markov_Chain(*args, **kwargs):
     if len(args) == 0:
-        return ['AffinityPropagation','BayesianGaussianMixture','Birch','GaussianMixture','HMM','KMeans','MeanShift','MiniBatchKMeans']
+        return ['AffinityPropagation','BayesianGaussianMixture','Birch','GaussianMixture','HMM','KMeans','KMedoids','MeanShift','MiniBatchKMeans']
     else:
         estimator = kwargs.get('estimator', 'KMeans')
         if estimator.lower() == 'affinitypropagation':
@@ -31,6 +31,9 @@ def Markov_Chain(*args, **kwargs):
         elif estimator.lower() == 'kmeans':
             from .cluster import KMeans
             return KMeans(*args, **kwargs)
+        elif estimator.lower() == 'kmedoids':
+            from .cluster import KMedoids
+            return KMedoids(*args, **kwargs)
         elif estimator.lower() == 'meanshift':
             from .cluster import MeanShift
             return MeanShift(*args, **kwargs)

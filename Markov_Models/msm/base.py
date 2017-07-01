@@ -43,6 +43,8 @@ class BaseMicroMSM(object):
                 self.centroids, self.labels = _cluster._KMeans(self, **kwargs)
             elif method.lower() == 'minibatchkmeans':
                 self.centroids, self.labels = _cluster._MiniBatchKMeans(self, **kwargs)
+            elif method.lower() == 'kmedoids':
+                self.centroids, self.labels = _cluster._KMedoids(self, **kwargs)
 
         # If fit updates lag time, update microstate lag, else use base
         if lag is None:
@@ -191,6 +193,8 @@ class BaseMacroMSM(object):
             analysis.coarse_grain.HC(self, n_macrostates)
         elif method.lower() == 'hmm':
             analysis.coarse_grain.HMM(self, n_macrostates)
+        elif method.lower() == 'hpca':
+            analysis.coarse_grain.HPCA(self, n_macrostates)
         elif method.lower() == 'pcca':
             analysis.coarse_grain.PCCA(self, n_macrostates, lag=lag)
         else:
