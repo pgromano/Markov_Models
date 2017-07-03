@@ -201,8 +201,7 @@ class BaseMacroMSM(object):
             raise AttributeError('Method '+str(method)+' is not implemented!')
 
         self._C = analysis.count_matrix(self.labels, lag=lag, sparse=self._is_sparse)
-
-        if not method.lower() == 'pcca':
+        if not method.lower() == 'pcca' or not method.lower() == 'hpca':
             if self._is_reversible is True:
                 if self._is_force_db is True:
                     self._T = analysis.transition_matrix.sym_T_estimator(self._C)
@@ -217,9 +216,9 @@ class BaseMacroMSM(object):
             raise AttributeError('''
             Microstate fitting must be performed prior to macrostate prediction.''')
         if method.lower() == 'kneighborsclassifier':
-            return _classifier._KNeighborsClassifier(self, data=data, labels=self.metastable_labels-1, **kwargs)
+            return _classifier._KNeighborsClassifier(self, data=data, labels=self.metastable_labels, **kwargs)
         if method.lower() == 'gaussiannb':
-            return _classifier._GaussianNB(self, data=data, labels=self.metastable_labels-1, **kwargs)
+            return _classifier._GaussianNB(self, data=data, labels=self.metastable_labels, **kwargs)
 
     def _count_matrix(self, lag=None):
         if lag is None:

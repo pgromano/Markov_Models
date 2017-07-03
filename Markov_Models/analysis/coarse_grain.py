@@ -4,6 +4,7 @@ from .spectral import stationary_distribution as _sd
 import numpy as np
 import copy, warnings
 from msmtools.analysis.api import _pcca_object as _PCCA
+from msmtools.analysis import pcca as fuzzy_membership
 from sklearn.preprocessing import MinMaxScaler as _MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier as _KNeighborsClassifier
 
@@ -61,9 +62,12 @@ def HMM(self, n_macrostates):
 
 from sklearn.mixture import GaussianMixture as _GMM
 def GMM(self, n_macrostates):
-    gmm = _GMM(n_components=n_macrostates).fit(self._micro.centroids)
-    self.labels = [gmm.predict(self._base.data[i]) for i in range(self._base.n_sets)]
-    self.metastable_labels = gmm.predict(self._micro.centroids)
+    scaler = _MinMaxScaler(feature_range=(0,1)).fit(self._micro.centroids)
+    gmm = _GMM(n_components=n_macrostates).fit(scaler.transform(self._micro.centroids))
+    self.metastable_labels = gmm.predict(scaler.transform(self._micro.centroids))
+    clf = _KNeighborsClassifier(n_neighbors=1).fit(scaler.transform(self._micro.centroids), self.metastable_labels)
+
+    self.labels = [clf.predict(scaler.transform(self._base.data[i])) for i in range(self._base.n_sets)]
     self.metastable_covariances = gmm.covariances_
     self.aic = gmm.aic
     self.bic = gmm.bic
@@ -82,3 +86,38 @@ def HC(self, n_macrostates):
     self.metastable_sets = []
     for i in range(self._N):
         self.metastable_sets.append(np.where(hc.labels_ == i)[0])
+
+def HPCA(self, n_macrostates):
+    # Function to convert microstate trajectory to macrostate assignments
+    def _assign_macrostates(labeled_data, sets):
+        return np.asarray(src._assignment.crisp_assignment(labeled_data, sets))
+
+    self.fit(int(self._micro._N*0.1), method='HC')
+    self.connectivity = np.copy(self.metastable_sets)
+
+    self._N = self._base.n_macrostates = n_macrostates
+    fuzzy_M = fuzzy_membership(self.transition_matrix, n_macrostates)
+    crisp_M = np.argmax(fuzzy_M, axis=1)
+
+    for i in range(len(self.metastable_labels)):
+        self.metastable_labels[i] = crisp_M[self.metastable_labels[i]]
+
+    self.metastable_sets = []
+    for i in range(n_macrostates):
+        self.metastable_sets.append(np.where(self.metastable_labels == i)[0])
+
+    self.labels = [_assign_macrostates(self._micro.labels[i],
+                                        self.metastable_labels)
+                    for i in range(self._base.n_sets)]
+
+    self.memberships = fuzzy_M
+    T = self._T
+    pi = _sd(T, ncv=None, sparse=self._is_sparse)
+
+    W = np.linalg.inv(np.dot(fuzzy_M.T, fuzzy_M))
+    A = np.dot(np.dot(fuzzy_M.T, T), fuzzy_M)
+    T_coarse = np.dot(W, A)
+
+    pi_coarse = np.dot(fuzzy_M.T, pi)
+    X = np.dot(np.diag(pi_coarse), T_coarse)
+    self._T = X / X.sum(axis=1)[:, None]
