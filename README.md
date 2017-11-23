@@ -4,19 +4,14 @@ The `Markov_Models` package builds Markov chains from datasets using `scikit-lea
 
 ### Installation
 
+The current version of `Markov_Models` can be installed by
+
     git clone https://github.com/pgromano/Markov_Models.git
     cd Markov_Models
-    python -m pip install -e . --user
+    python -m pip install -e
 
-### Usage
-A detailed example of generating a Markov State Model (MSM) can be found in [here](./examples/standard_msm.ipynb).
+To use the previous version, install from the legacy branch
 
-    In [1]: import Markov_Models as mm
-
-    In [2]: files = []
-    In [3]: files.append(['/path/to/data_set_1/parameter_1', '/path/to/data_set_1/parameter_2'])
-    In [4]: files.append(['/path/to/data_set_2/parameter_1', '/path/to/data_set_2/parameter_2'])
-
-    In [5]: data = mm.load.from_CSV(files)
-    In [6]: model = mm.Markov_Chain(data, estimator='KMeans')
-    In [7]: model.fit(N)
+    git clone -b legacy https://github.com/pgromano/Markov_Models.git
+    cd Markov_Models
+    python -m pip install -e
