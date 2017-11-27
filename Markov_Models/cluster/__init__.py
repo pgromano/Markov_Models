@@ -1,4 +1,5 @@
 from .base import ContinuousClusterMixin
+from .kmedoids import _KMedoids
 from sklearn import cluster
 
 
@@ -24,6 +25,10 @@ class Hierarchical(ContinuousClusterMixin, cluster.AgglomerativeClustering):
 
 class KMeans(ContinuousClusterMixin, cluster.KMeans):
     __doc__ = cluster.KMeans.__doc__
+
+
+class KMedoids(ContinuousClusterMixin, _KMedoids):
+    __doc__ = _KMedoids.__doc__
 
 
 class MeanShift(ContinuousClusterMixin, cluster.MeanShift):
