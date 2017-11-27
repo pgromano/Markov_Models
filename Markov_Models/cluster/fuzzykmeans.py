@@ -58,7 +58,7 @@ class _FuzzyKMeans(KMeans):
         m = self.fuzziness
 
         # Compute distance to centroids
-        D = cdist(check_array(X), self.cluster_centers_)
+        D = cdist(X, self.cluster_centers_)
 
         # Check for null-distances and add dummy value
         row, col = np.where(D == 0.0)
