@@ -50,9 +50,6 @@ class _FuzzyKMeans(KMeans):
             self.labels_ = self._e_step(X)
         return self
 
-    def membership(self, X):
-        return self._e_step(X)
-
     def _e_step(self, X):
         X = check_array(X)
         m = self.fuzziness

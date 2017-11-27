@@ -71,7 +71,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         self.labels_ = labels
         self.cluster_centers_ = X[medoids]
 
-        if self.disp:
+        if self._disp:
             print('Method terminated after {:d} iterations'.format(n_iter))
         return self
 

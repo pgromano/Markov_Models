@@ -1,9 +1,13 @@
 from ..base import ContinuousSequence, DiscreteSequence
+import numpy as np
+from sklearn.utils import check_array
+from scipy.spatial.distance import cdist
 
 
 class ContinuousClusterMixin(object):
     ''' Simple tool to assist passing multiple sequences of continuous data to
     the Scikit-Learn cluster API.'''
+
     def fit(self, X, y=None):
         '''Fit clustering model on the data
         Parameters
@@ -27,6 +31,8 @@ class ContinuousClusterMixin(object):
                     labels_.append(self.labels_[i:j])
             self.labels_ = DiscreteSequence(labels_)
 
+        if hasattr(self, 'cluster_centers_'):
+            setattr(self, 'membership', self._membership)
         return self
 
     def predict(self, X, y=None):
@@ -58,3 +64,22 @@ class ContinuousClusterMixin(object):
 
     def fit_transform(self, X, y=None):
         self.fit(X, y).transform(X, y)
+
+    def _membership(self, X, m=2):
+        if not hasattr(self, 'cluster_centers_'):
+            raise ValueError('This attribute requires self.cluster_centers_')
+        X = check_array(X)
+
+        # Compute distance to centroids
+        D = cdist(X, self.cluster_centers_)
+
+        # Check for null-distances and add dummy value
+        row, col = np.where(D == 0.0)
+        D[row] = 1.0
+
+        # Calculate weights
+        w = (1.0 / D)**(2 / (m - 1))
+        w[row] = 0.0
+        w[row, col] = 1.0
+        w = w / np.sum(w, axis=1)[:, None]
+        return w
