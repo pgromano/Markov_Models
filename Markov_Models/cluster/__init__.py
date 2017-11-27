@@ -1,5 +1,6 @@
 from .base import ContinuousClusterMixin
 from .kmedoids import _KMedoids
+from .fuzzykmeans import _FuzzyKMeans
 from sklearn import cluster
 
 
@@ -17,6 +18,10 @@ class Birch(ContinuousClusterMixin, cluster.Birch):
 
 class DBSCAN(ContinuousClusterMixin, cluster.DBSCAN):
     __doc__ = cluster.DBSCAN.__doc__
+
+
+class FuzzyKMeans(ContinuousClusterMixin, _FuzzyKMeans):
+    __doc__ = _FuzzyKMeans.__doc__
 
 
 class Hierarchical(ContinuousClusterMixin, cluster.AgglomerativeClustering):
