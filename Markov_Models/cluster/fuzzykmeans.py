@@ -32,18 +32,18 @@ class _FuzzyKMeans(KMeans):
 
         # Initialize centroids
         x_squared_norms = extmath.row_norms(X, squared=True)
-        self.cluster_centers = k_means_._init_centroids(
+        self.cluster_centers_ = k_means_._init_centroids(
                 X, self.n_clusters, self.init,
-                random_state=random_state,
+                random_state=self.random_state,
                 x_squared_norms=x_squared_norms,
-                init_size=init_size)
+                init_size=None)
 
         # Expectation-Maximization
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             centroids_old = deepcopy(self.cluster_centers_)
             self._e_step(X)
             self._m_step(X)
-            if np.sum((centroids_old - self.cluster_centers_)**2) < self.tol * vdata:
+            if np.sum((centroids_old - self.cluster_centers_)**2) < self.tol:
                 break
 
         if self._store_labels:
@@ -56,8 +56,20 @@ class _FuzzyKMeans(KMeans):
     def _e_step(self, X):
         X = check_array(X)
         m = self.fuzziness
-        D = (1.0 / cdist(X, self.cluster_centers_))**(2 / (m - 1))
-        return D / np.sum(D, axis=1)[:, None]
+
+        # Compute distance to centroids
+        D = cdist(check_array(X), self.cluster_centers_)
+
+        # Check for null-distances and add dummy value
+        row, col = np.where(D == 0.0)
+        D[row] = 1.0
+
+        # Calculate weights
+        w = (1.0 / D)**(2 / (m - 1))
+        w[row] = 0.0
+        w[row, col] = 1.0
+        w = w / np.sum(w, axis=1)[:, None]
+        return w
 
     def _m_step(self, X):
         D = self._e_step(X)
