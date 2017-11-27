@@ -46,6 +46,15 @@ class ContinuousClusterMixin(object):
             labels.append(super(ContinuousClusterMixin, self).predict(xi))
         return DiscreteSequence(labels)
 
+    def transform(self, X, y=None):
+        X = ContinuousSequence(X)
+        Xtr = []
+        for xi in X.values:
+            Xtr.append(super(ContinuousClusterMixin, self).transform(xi))
+        return ContinuousSequence(Xtr)
+
     def fit_predict(self, X, y=None):
-        self.fit(X, y)
-        self.predict(X, y)
+        self.fit(X, y).predict(X, y)
+
+    def fit_transform(self, X, y=None):
+        self.fit(X, y).transform(X, y)

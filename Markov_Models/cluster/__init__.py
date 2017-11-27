@@ -1,4 +1,6 @@
 from .base import ContinuousClusterMixin
+from .kmedoids import _KMedoids
+from .fuzzykmeans import _FuzzyKMeans
 from sklearn import cluster
 
 
@@ -18,12 +20,20 @@ class DBSCAN(ContinuousClusterMixin, cluster.DBSCAN):
     __doc__ = cluster.DBSCAN.__doc__
 
 
+class FuzzyKMeans(ContinuousClusterMixin, _FuzzyKMeans):
+    __doc__ = _FuzzyKMeans.__doc__
+
+
 class Hierarchical(ContinuousClusterMixin, cluster.AgglomerativeClustering):
     __doc__ = cluster.AgglomerativeClustering.__doc__
 
 
 class KMeans(ContinuousClusterMixin, cluster.KMeans):
     __doc__ = cluster.KMeans.__doc__
+
+
+class KMedoids(ContinuousClusterMixin, _KMedoids):
+    __doc__ = _KMedoids.__doc__
 
 
 class MeanShift(ContinuousClusterMixin, cluster.MeanShift):
