@@ -1,4 +1,4 @@
-from .base import DiscreteEstimator, DiscreteModel
+from . import base as _base
 
 
 def MarkovChain(T=None, **kwargs):
@@ -6,6 +6,6 @@ def MarkovChain(T=None, **kwargs):
     Markov Chain estimated from discrete sequence trajectory.
     '''
     if T is None:
-        return DiscreteEstimator(**kwargs)
+        return _base.DiscreteEstimator(**kwargs)
     else:
-        return DiscreteModel(T, **kwargs)
+        return _base.DiscreteModel(T, **kwargs)

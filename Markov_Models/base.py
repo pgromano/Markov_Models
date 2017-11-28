@@ -1,12 +1,13 @@
 from .estimation import count_matrix, transition_matrix, eigen, equilibrium
 from .utils.validation import check_array, check_transition_matrix
 import numpy as np
+from copy import deepcopy
 
 
 class ContinuousSequence(object):
     def __init__(self, X):
         if isinstance(X, ContinuousSequence):
-            self.values = X
+            self.values = X.values
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=float, rank=2) for xi in X]
@@ -22,19 +23,22 @@ class ContinuousSequence(object):
                     raise ValueError('Continuous sequence data must be 3D.')
             else:
                 raise ValueError('Input data unrecognized.')
+
         self.n_sets = len(self.values)
         self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
         assert all([self.values[0].shape[1] == self.values[i].shape[1]
                     for i in range(self.n_sets)]), 'Number of features inconsistent'
         self.n_features = self.values[0].shape[1]
 
-    def _seqcat(self, axis=None):
+    def concatenate(self, axis=None):
+        if not hasattr(self, '_seqcat'):
+            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)])
         if axis is None:
-            return np.concatenate([self.values[i] for i in range(self.n_sets)])
+            return self._seqcat
         return np.concatenate([self.values[i][:, axis] for i in range(self.n_sets)])
 
     def histogram(self, axis=None, bins=100, return_extent=False):
-        his, ext = np.histogramdd(self._seqcat(axis), bins=bins)
+        his, ext = np.histogramdd(self.concatenate(axis), bins=bins)
         if return_extent is True:
             extent = []
             for k in range(len(ext)):
@@ -44,13 +48,13 @@ class ContinuousSequence(object):
         return his
 
     def sample(self, size=None, axis=None, replace=True):
-        return np.random.choice(self._seqcat(axis), size, replace)
+        return np.random.choice(self.concatenate(axis), size, replace)
 
 
 class DiscreteSequence(object):
     def __init__(self, X):
         if isinstance(X, DiscreteSequence):
-            self.values = X
+            self.values = X.values
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=int, rank=1) for xi in X]
@@ -61,6 +65,7 @@ class DiscreteSequence(object):
                     raise ValueError('Discrete sequence data must be 1D.')
             else:
                 raise ValueError('Input data unrecognized.')
+
         self.n_sets = len(self.values)
         self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
         self.n_states = np.amax(self.values) + 1
