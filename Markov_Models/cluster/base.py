@@ -19,7 +19,7 @@ class ContinuousClusterMixin(object):
         self
         '''
         X = ContinuousSequence(X)
-        super(ContinuousClusterMixin, self).fit(X._seqcat())
+        super(ContinuousClusterMixin, self).fit(X.concatenate())
 
         if hasattr(self, 'labels_'):
             labels_ = []
