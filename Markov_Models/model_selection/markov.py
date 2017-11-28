@@ -8,8 +8,8 @@ def aic(T):
 
 
 def relaxation_time(X, lags=1, n_lags=10, bootstrap=None,
-               db=False, rev=True,
-               sparse=False, ncv=None):
+                    method='prinz', sparse=False, ncv=None,
+                    tol=1e-4, max_iter=1000):
 
     # Check Lag Values
     if isinstance(lags, (np.ndarray, list)):
@@ -21,14 +21,14 @@ def relaxation_time(X, lags=1, n_lags=10, bootstrap=None,
     X = DiscreteSequence(X)
 
     if bootstrap is not None:
-        t = _relaxation_times(X, lags, rev, db, sparse, ncv)
-        straps = _bootstrap_rt(X, lags, bootstrap, rev, db, sparse, ncv)
+        t = _relaxation_times(X, lags, method, tol, max_iter, sparse, ncv)
+        straps = _bootstrap_rt(X, lags, bootstrap, method, tol, max_iter, sparse, ncv)
         return t, straps
     else:
-        return _relaxation_times(X, lags, rev, db, sparse, ncv)
+        return _relaxation_times(X, lags, method, tol, max_iter, sparse, ncv)
 
 
-def _relaxation_times(X, lags, rev, db, sparse, ncv):
+def _relaxation_times(X, lags, method, tol, max_iter, sparse, ncv):
     t = np.zeros(len(lags), dtype=np.float64)
     for i, lag in enumerate(lags):
         if lag == 0:
@@ -38,13 +38,7 @@ def _relaxation_times(X, lags, rev, db, sparse, ncv):
             C = count_matrix(X, lag, sparse)
 
             # Compute Transition Matrix
-            if rev is True:
-                if db is True:
-                    T = transition_matrix.symmetric(C)
-                else:
-                    T = transition_matrix.prinz(C)
-            else:
-                T = transition_matrix.naive(C)
+            T = transition_matrix(C, method, tol=tol, max_iter=max_iter)
 
             # Compute Timescales
             w = eigen.values(T, sparse, k=2, ncv=ncv)[1]
@@ -52,7 +46,7 @@ def _relaxation_times(X, lags, rev, db, sparse, ncv):
     return t
 
 
-def _bootstrap_rt(X, lags, n_straps, rev, db, sparse, ncv):
+def _bootstrap_rt(X, lags, n_straps, method, tol, max_iter, sparse, ncv):
     n_samples = np.sum(X.n_samples)
     Xs = np.split(X.sample(size=n_samples * n_straps), n_straps, axis=0)
     straps = []
@@ -66,13 +60,7 @@ def _bootstrap_rt(X, lags, n_straps, rev, db, sparse, ncv):
                 C = count_matrix(DiscreteSequence(Xs[strap]), lag, sparse)
 
                 # Compute Transition Matrix
-                if rev is True:
-                    if db is True:
-                        T = transition_matrix.symmetric(C)
-                    else:
-                        T = transition_matrix.prinz(C)
-                else:
-                    T = transition_matrix.naive(C)
+                T = transition_matrix(C, method, tol=tol, max_iter=max_iter)
 
                 # Compute Timescales
                 w = eigen.values(T, sparse, k=2, ncv=ncv)[1]
