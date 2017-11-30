@@ -14,8 +14,8 @@ extensions.append(
 
 extensions.append(
     Extension(
-        'Markov_Models.estimation._sample',
-        sources = [join(SRC_DIR, "_sample.pyx")],
+        'Markov_Models.estimation._simulate',
+        sources = [join(SRC_DIR, "_simulate.pyx")],
         include_dirs=[numpy.get_include()]),
 )
 
