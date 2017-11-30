@@ -1,4 +1,4 @@
-from . import _sample
+from . import _simulate
 import numpy as np
 from scipy.linalg import eig, solve
 from scipy.sparse.linalg import eigs
@@ -31,19 +31,45 @@ def mfpt(T, origin, target=None, sparse=False):
         b[origin] = 0.0
         return solve(A, b)
     else:
-        """Stationary distribution restriced on starting set A"""
+        # Stationary distribution restriced on starting set A
         A = distribution(T)[origin]
         A = A / np.sum(A)
 
-        """Mean first-passage time to B (for all possible starting states)"""
+        # Mean first-passage time to B (for all possible starting states)
         B = mfpt(T, target)
 
-        """Mean first-passage time from A to B"""
+        # Mean first-passage time from A to B
         return np.dot(A, B[origin])
 
 
-def sample(T, n_samples):
-    return np.asarray(_sample.sample(T, n_samples))
+def sample(pi, size=None):
+    '''
+    Randomly samples the equilibrium distribution
+
+    pi:
+    '''
+    return np.random.choice(np.arange(len(pi)), p=pi, size=size)
+
+
+def simulate(T, n_samples, n0):
+    '''
+    Runs a simulation from the transition matrix
+
+    T:
+    n_samples:
+    n0:
+    '''
+
+    if isinstance(n_samples, int):
+        return np.asarray(_simulate.simulate(T, n_samples, n0, 1))
+    else:
+        if len(n_samples) == 1:
+            X = np.asarray(_simulate.simulate(
+                           T, np.int(np.product(n_samples)), n0, 1))
+        else:
+            X = np.asarray(_simulate.simulate(
+                           T, np.int(np.product(n_samples)), n0, n_samples[0]))
+    return X.reshape(n_samples)
 
 
 def timescales(self, k):

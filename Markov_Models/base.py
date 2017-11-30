@@ -7,12 +7,15 @@ from copy import deepcopy
 class ContinuousSequence(object):
     def __init__(self, X):
         if isinstance(X, ContinuousSequence):
-            self.values = X.values
+            for key,item in X.__dict__.items():
+                setattr(self, key, item)
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=float, rank=2) for xi in X]
             elif isinstance(X, np.ndarray):
-                if len(X.shape) == 2:
+                if len(X.shape) == 1:
+                    self.values = [check_array(X.reshape(-1, 1), dtype=float, rank=2)]
+                elif len(X.shape) == 2:
                     raise ValueError('''For continuous sequences, a 2D array is
                                         vague with respect to number of
                                         datasets, samples, and features.
@@ -24,11 +27,11 @@ class ContinuousSequence(object):
             else:
                 raise ValueError('Input data unrecognized.')
 
-        self.n_sets = len(self.values)
-        self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
-        assert all([self.values[0].shape[1] == self.values[i].shape[1]
-                    for i in range(self.n_sets)]), 'Number of features inconsistent'
-        self.n_features = self.values[0].shape[1]
+            self.n_sets = len(self.values)
+            self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
+            assert all([self.values[0].shape[1] == self.values[i].shape[1]
+                        for i in range(self.n_sets)]), 'Number of features inconsistent'
+            self.n_features = self.values[0].shape[1]
 
     def concatenate(self, axis=None):
         if not hasattr(self, '_seqcat'):
@@ -48,27 +51,33 @@ class ContinuousSequence(object):
         return his
 
     def sample(self, size=None, axis=None, replace=True):
-        return np.random.choice(self.concatenate(axis), size, replace)
+        index = np.random.choice(np.arange(np.sum(self.n_samples)), size, replace)
+        if len(size) > 1:
+            return self.concatenate(axis)[index.ravel()].reshape(size)
+        return self.concatenate(axis)[index]
 
 
 class DiscreteSequence(object):
     def __init__(self, X):
         if isinstance(X, DiscreteSequence):
-            self.values = X.values
+            for key,item in X.__dict__.items():
+                setattr(self, key, item)
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=int, rank=1) for xi in X]
             elif isinstance(X, np.ndarray):
-                if len(X.shape) == 2:
+                if len(X.shape) == 1:
+                    self.values = [check_array(X, dtype=int, rank=1)]
+                elif len(X.shape) == 2:
                     self.values = [xi for xi in X]
                 elif len(X.shape) > 2:
                     raise ValueError('Discrete sequence data must be 1D.')
             else:
                 raise ValueError('Input data unrecognized.')
 
-        self.n_sets = len(self.values)
-        self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
-        self.n_states = np.amax(self.values) + 1
+            self.n_sets = len(self.values)
+            self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
+            self.n_states = np.amax(self.values) + 1
 
     def counts(self, return_labels=True):
         states, counts = np.unique(self.values, return_counts=True)
@@ -90,9 +99,12 @@ class DiscreteModel(object):
         self._T = T
 
     def sample(self, n_samples=None):
+        return equilibrium.sample(self.equilibrium, n_samples)
+
+    def simulate(self, n_samples=None, n0=None):
         if n_samples is None:
             n_samples = 1
-        return equilibrium.sample(self._T, n_samples)
+        return equilibrium.simulate(self._T, n_samples, n0)
 
     @property
     def transition_matrix(self):
@@ -101,11 +113,13 @@ class DiscreteModel(object):
 
     @property
     def metastability(self):
-        return np.diagonal(self._T).sum()
+        return np.trace(self._T)
 
     @property
     def equilibrium(self):
-        return equilibrium.distribution(self._T, sparse=self._is_sparse)
+        if not hasattr(self , '_pi'):
+            self._pi = equilibrium.distribution(self._T, sparse=self._is_sparse)
+        return self._pi
 
     def eigenvalues(self, **kwargs):
         return eigen.values(self._T, self._is_sparse, **kwargs)
@@ -149,9 +163,12 @@ class DiscreteEstimator(object):
         return self
 
     def sample(self, n_samples=None):
+        return equilibrium.sample(self.equilibrium, n_samples)
+
+    def simulate(self, n_samples=None, n0=None):
         if n_samples is None:
             n_samples = 1
-        return equilibrium.sample(self._T, n_samples)
+        return equilibrium.simulate(self._T, n_samples, n0)
 
     @property
     def count_matrix(self):
@@ -180,7 +197,9 @@ class DiscreteEstimator(object):
 
     @property
     def equilibrium(self):
-        return equilibrium.distribution(self._T, sparse=self._is_sparse)
+        if not hasattr(self, '_pi'):
+            self._pi = equilibrium.distribution(self._T, sparse=self._is_sparse)
+        return self._pi
 
     def eigenvalues(self, **kwargs):
         return eigen.values(self._T, self._is_sparse, **kwargs)
