@@ -16,7 +16,7 @@ def simulate(double[:, :] T, np.int n_samples, np.int n0, np.int n_sets):
             raise ValueError('Initial state outside of network!!!')
         X[0] = n0
 
-    for n in range(1, n_samples - 1):
+    for n in range(1, n_samples):
         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):
             X[n] = n0
         else:

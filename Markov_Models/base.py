@@ -97,6 +97,7 @@ class DiscreteModel(object):
         self._is_sparse = kwargs.get('sparse', False)
         self.lag = kwargs.get('lag', 1)
         self._T = T
+        self.n_states = self._T.shape[0]
 
     def sample(self, n_samples=None):
         return equilibrium.sample(self.equilibrium, n_samples)

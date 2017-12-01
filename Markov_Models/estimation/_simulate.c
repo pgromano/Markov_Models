@@ -2766,7 +2766,7 @@ static PyObject *__pyx_pf_13Markov_Models_10estimation_9_simulate_simulate(CYTHO
  *             raise ValueError('Initial state outside of network!!!')
  *         X[0] = n0             # <<<<<<<<<<<<<<
  * 
- *     for n in range(1, n_samples - 1):
+ *     for n in range(1, n_samples):
  */
     __pyx_t_9 = __Pyx_PyInt_As_long(__pyx_v_n0); if (unlikely((__pyx_t_9 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L1_error)
     __pyx_t_11 = 0;
@@ -2777,20 +2777,17 @@ static PyObject *__pyx_pf_13Markov_Models_10estimation_9_simulate_simulate(CYTHO
   /* "Markov_Models/estimation/_simulate.pyx":19
  *         X[0] = n0
  * 
- *     for n in range(1, n_samples - 1):             # <<<<<<<<<<<<<<
+ *     for n in range(1, n_samples):             # <<<<<<<<<<<<<<
  *         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):
  *             X[n] = n0
  */
-  __pyx_t_3 = PyNumber_Subtract(__pyx_v_n_samples, __pyx_int_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_9 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_9 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_9 = __Pyx_PyInt_As_long(__pyx_v_n_samples); if (unlikely((__pyx_t_9 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
   for (__pyx_t_12 = 1; __pyx_t_12 < __pyx_t_9; __pyx_t_12+=1) {
     __pyx_v_n = __pyx_t_12;
 
     /* "Markov_Models/estimation/_simulate.pyx":20
  * 
- *     for n in range(1, n_samples - 1):
+ *     for n in range(1, n_samples):
  *         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):             # <<<<<<<<<<<<<<
  *             X[n] = n0
  *         else:
@@ -2872,7 +2869,7 @@ static PyObject *__pyx_pf_13Markov_Models_10estimation_9_simulate_simulate(CYTHO
     if (__pyx_t_8) {
 
       /* "Markov_Models/estimation/_simulate.pyx":21
- *     for n in range(1, n_samples - 1):
+ *     for n in range(1, n_samples):
  *         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):
  *             X[n] = n0             # <<<<<<<<<<<<<<
  *         else:
@@ -2884,7 +2881,7 @@ static PyObject *__pyx_pf_13Markov_Models_10estimation_9_simulate_simulate(CYTHO
 
       /* "Markov_Models/estimation/_simulate.pyx":20
  * 
- *     for n in range(1, n_samples - 1):
+ *     for n in range(1, n_samples):
  *         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):             # <<<<<<<<<<<<<<
  *             X[n] = n0
  *         else:
