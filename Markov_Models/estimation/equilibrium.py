@@ -72,7 +72,7 @@ def simulate(T, n_samples, n0):
     return X.reshape(n_samples)
 
 
-def timescales(self, k):
-    t = -self.lag / np.log(abs(self.eigenvalues(k=k)))
+def timescales(self, **kwargs):
+    t = -self.lag / np.log(abs(self.eigenvalues(**kwargs)))
     t[0] = np.inf
     return t

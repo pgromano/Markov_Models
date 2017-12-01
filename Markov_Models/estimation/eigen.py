@@ -3,7 +3,7 @@ from scipy.linalg import eig
 from scipy.sparse.linalg import eigs
 
 
-def values(T, sparse, k=None, ncv=False):
+def values(T, sparse, k=None, ncv=None):
     r'''Compute eigenvalues of transition matrix.
     Parameters
     ---------_
@@ -20,11 +20,11 @@ def values(T, sparse, k=None, ncv=False):
     w : (k,) numpy.ndarray
         Array of k eigenvalues.
     '''
-    if sparse is True:
+    if sparse:
         if k is None:
-            k = min(T.shape[0] - 2, 6)
+            k = int(min(T.shape[0] - 2, 6))
         if ncv is None:
-            ncv = min(T.shape[0], max(5 * k + 1, 25))
+            ncv = int(min(T.shape[0], max(5 * k + 1, 25)))
 
         # Solve Eigenvalues
         w, R = eigs(T, k=k, ncv=ncv)

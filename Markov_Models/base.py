@@ -137,8 +137,8 @@ class DiscreteModel(object):
     def mfpt(self, origin, target=None):
         return equilibrium.mfpt(self._T, origin, target, self._is_sparse)
 
-    def timescales(self, k=None):
-        return equilibrium.timescales(self, k)
+    def timescales(self, k=None, **kwargs):
+        return equilibrium.timescales(self, k=k, **kwargs)
 
 
 class DiscreteEstimator(object):
@@ -217,5 +217,5 @@ class DiscreteEstimator(object):
     def mfpt(self, origin, target=None):
         return equilibrium.mfpt(self._T, origin, target, self._is_sparse)
 
-    def timescales(self, k=None):
-        return equilibrium.timescales(self, k)
+    def timescales(self, k=None, **kwargs):
+        return equilibrium.timescales(self, k=k, **kwargs)
