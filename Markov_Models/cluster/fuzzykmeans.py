@@ -70,6 +70,6 @@ class _FuzzyKMeans(KMeans):
 
     def _m_step(self, X):
         D = self._e_step(X)
-        w = D ** self.fuzziness
+        w = D**self.fuzziness
         self.cluster_centers_ = np.dot(X.T, w).T
         self.cluster_centers_ /= w.sum(axis=0)[:, None]

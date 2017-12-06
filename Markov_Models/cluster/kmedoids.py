@@ -53,16 +53,16 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
 
         # Old medoids will be stored here for reference
         medoids = self._k_init(D, self.n_clusters)
-        medoids_old = np.zeros((self.n_clusters,))
+        medoids_prev = np.zeros((self.n_clusters,))
 
         n_iter = 1
-        while not all(medoids_old == medoids):
+        while not all(medoids_prev == medoids):
             if n_iter == self.max_iter:
                 print('Max iterations {:d} exceeded'.format(self.max_iter))
                 break
 
             # Save copy of previous iteration and update medoids
-            medoids_old = np.copy(medoids)
+            medoids_prev = np.copy(medoids)
             labels = self._k_labels(D, medoids)
             labels, medoids = self._k_update(D, labels, medoids)
             n_iter += 1
