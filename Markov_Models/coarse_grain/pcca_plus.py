@@ -1,3 +1,4 @@
+from __future__ import print_function, absolute_import, division
 from ..utils.validation import check_equilibrium
 import numpy as np
 from scipy.linalg import inv, pinv, norm
