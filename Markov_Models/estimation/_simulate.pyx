@@ -18,7 +18,10 @@ def simulate(double[:, :] T, np.int n_samples, np.int n0, np.int n_sets):
 
     for n in range(1, n_samples):
         if (n_sets != 1) and (n % np.int(n_samples / n_sets) == 0):
-            X[n] = n0
+            if n0 is None:
+                X[n] = np.random.randint(0, n_states, size=1).astype(np.int)
+            else:
+                X[n] = n0
         else:
-            X[n] = np.random.choice(n_states, size=1, p=T[X[n - 1], :]).astype(np.int)
+            X[n] = np.int(np.random.choice(n_states, size=1, p=T[X[n - 1], :]))
     return X
