@@ -16,7 +16,8 @@ def check_array(X, dtype=None, rank=1):
 
 
 def check_transition_matrix(T):
-    pass
+    assert T.shape[0] == T.shape[1], 'Not valid transition matrix'
+    assert np.allclose(T.sum(1), 1), 'Not valid transition matrix'
 
 
 def check_equilibrium(pi, n=None):
