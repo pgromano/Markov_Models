@@ -3,11 +3,11 @@ from . import _mle_tmat_prinz
 
 
 def transition_matrix(C, method, **kwargs):
-    if method == 'prinz':
+    if method.lower() == 'prinz':
         return prinz(C, **kwargs)
-    elif method == 'symmetric':
+    elif method.lower() == 'symmetric':
         return symmetric(C)
-    elif method == 'naive':
+    elif method.lower() == 'naive':
         return naive(C)
 
 
