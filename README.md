@@ -43,10 +43,16 @@ model = MarkovChain(T=T)
 
 ```python
 # Generate a random discrete sequence
-seq = np.random.randint(0, 2, size=100000)
+seq = model.simulate(1000000)
 
 # Initial and fit the Markov chain
 estimator = MarkovChain().fit(seq)
+
+# RMSE : 0.00044504602839456724
+RMSE = np.sqrt(((model.transition_matrix -
+                 estimator.transition_matrix)**2).sum() /
+                 model.n_states**2)
+
 ```
 
 [1]: http://scikit-learn.org/stable/modules/classes.html#module-sklearn.cluster
