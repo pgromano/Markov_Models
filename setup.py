@@ -22,8 +22,8 @@ extensions.append(
 setup(
     name = 'Markov_Models',
     author = 'Pablo Romano',
-    author_email = 'promano@uoregon.edu',
-    description = 'Python API for Generating Markov Models',
+    author_email = 'pablo.romano42@gmail.com',
+    description = 'Python API for Generating Markov Chains',
     version = '0.3',
     url = 'https://github.com/pgromano/Markov_Models',
 
