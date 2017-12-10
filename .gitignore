@@ -10,6 +10,8 @@ __pycache__/
 # C extensions
 *.so
 *.so.dSYM
+_mle_tmat_prinz.c
+_simulate.c
 
 # Distribution / packaging
 __pycache__
