@@ -6,6 +6,7 @@ from copy import deepcopy
 
 class ContinuousSequence(object):
     """ Continuous sequence class to establish standard data format
+
     Parameters
     ----------
     X : iterable of array-like, shape=(n_sets, n_samples, n_features)
@@ -25,10 +26,10 @@ class ContinuousSequence(object):
         Number of features/dimensions in dataset. The values of n_features must
         be the same for all sets.
     """
+
     def __init__(self, X):
         if isinstance(X, ContinuousSequence):
-            for key,item in X.__dict__.items():
-                setattr(self, key, item)
+            self.__dict__ = X.__dict__
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=float, rank=2) for xi in X]
@@ -48,15 +49,53 @@ class ContinuousSequence(object):
                         for i in range(self.n_sets)]), 'Number of features inconsistent'
             self.n_features = self.values[0].shape[1]
 
-    def concatenate(self, axis=None):
-        if not hasattr(self, '_seqcat'):
-            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)])
-        if axis is None:
-            return self._seqcat
-        return np.concatenate([self.values[i][:, axis] for i in range(self.n_sets)])
+    def concatenate(self, feature=None):
+        """ Concatenates sequences
 
-    def histogram(self, axis=None, bins=100, return_extent=False):
-        his, ext = np.histogramdd(self.concatenate(axis), bins=bins)
+        Parameters
+        ----------
+        feature : int, optional
+            Feature to concatenate and return. None concatenates all features
+
+        Returns
+        -------
+        seqcat : list of numpy.ndarray
+            List of sequences concatenated
+
+        See Also
+        --------
+            numpy.concatenate
+        """
+
+        if (not hasattr(self, '_seqcat')) and (feature is None):
+            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)])
+        if feature is None:
+            return self._seqcat
+        return np.concatenate([self.values[i][:, feature] for i in range(self.n_sets)])
+
+    def histogram(self, feature=None, bins=10, return_extent=False):
+        """ Create histogram of sequences
+
+        Parameters
+        ----------
+        feature : int, optional
+            Feature to build histogram. None build histogram along all
+            features.
+        bins : int or iterable of ints
+            Number of bins to generate histogram. If bins is an iterable, it
+            must be of length equal to the number of features in sequence.
+
+        Returns
+        -------
+        seqcat : list of numpy.ndarray
+            List of sequences concatenated
+
+        See Also
+        --------
+            numpy.histogramdd
+        """
+
+        his, ext = np.histogramdd(self.concatenate(feature), bins=bins)
         if return_extent is True:
             extent = []
             for k in range(len(ext)):
@@ -65,15 +104,37 @@ class ContinuousSequence(object):
             return his, extent
         return his
 
-    def sample(self, size=None, axis=None, replace=True):
+    def sample(self, size=None, feature=None, replace=True):
+        """ Uniformly sample from sequence data
+
+        Parameters
+        ----------
+        size : int or list of ints, optional
+            Size to sample from sequence
+        feature : int
+            Features to sample along
+        replace : bool
+            Whether to sample with replacement
+
+        Returns
+        -------
+        samples : numpy.ndarray
+            Sampled values from sequences
+
+        See Also
+        --------
+            numpy.random.choice
+        """
+
         index = np.random.choice(np.arange(np.sum(self.n_samples)), size, replace)
         if len(size) > 1:
-            return self.concatenate(axis)[index.ravel()].reshape(size)
-        return self.concatenate(axis)[index]
+            return self.concatenate(feature)[index.ravel()].reshape(size)
+        return self.concatenate(feature)[index]
 
 
 class DiscreteSequence(object):
     """ Discrete sequence class to establish standard data format
+
     Parameters
     ----------
     X : iterable of array-like, shape=(n_sets, n_samples)
@@ -90,10 +151,10 @@ class DiscreteSequence(object):
     n_samples : list
         List of number of samples/observations in each set.
     """
+
     def __init__(self, X):
         if isinstance(X, DiscreteSequence):
-            for key,item in X.__dict__.items():
-                setattr(self, key, item)
+            self.__dict__ = X.__dict__
         else:
             if isinstance(X, list):
                 self.values = [check_array(xi, dtype=int, rank=1) for xi in X]
@@ -112,16 +173,69 @@ class DiscreteSequence(object):
             self.n_states = np.amax(self.values) + 1
 
     def counts(self, return_labels=True):
-        states, counts = np.unique(self.values, return_counts=True)
+        """ Count the number of unique elements
+
+        Parameters
+        ----------
+        return_labels : bool
+            Whether or not to return labels of unique elements.
+
+        Returns
+        -------
+        counts : int, numpy.ndarray
+            The number of occurances for each unique value within sequences.
+        labels : int, numpy.ndarray
+            If return_labels is True, then the values of the unique states are
+            returned.
+
+        See Also
+        --------
+            numpy.unique
+        """
+
+        labels, counts = np.unique(self.values, return_counts=True)
         if return_labels:
-            return states, counts
+            return labels, counts
         return counts
 
     def sample(self, size=None, replace=True):
-        return np.random.choice(self._seqcat(), size, replace)
+        """ Uniformly sample from sequence data
 
-    def _seqcat(self):
-        return np.concatenate([self.values[i] for i in range(self.n_sets)], 0)
+        Parameters
+        ----------
+        size : int or list of ints, optional
+            Size to sample from sequence
+        replace : bool
+            Whether to sample with replacement
+
+        Returns
+        -------
+        samples : numpy.ndarray
+            Sampled values from sequences
+
+        See Also
+        --------
+            numpy.random.choice
+        """
+
+        return np.random.choice(self.concatenate(), size, replace)
+
+    def concatenate(self):
+        """ Concatenates sequences
+
+        Returns
+        -------
+        seqcat : list of numpy.ndarray
+            List of sequences concatenated
+
+        See Also
+        --------
+            numpy.concatenate
+        """
+
+        if not hasattr(self, '_seqcat'):
+            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)], 0)
+        return self._seqcat
 
 
 class BaseDiscreteModel(object):
@@ -130,45 +244,203 @@ class BaseDiscreteModel(object):
     Provides basic functionality for generating chains, kinetics, and spectral
     analysis.
     """
-    def sample(self, n_samples=None):
-        return equilibrium.sample(self.equilibrium, n_samples)
 
-    def simulate(self, n_samples=None, n0=None):
-        if n_samples is None:
-            n_samples = 1
-        return equilibrium.simulate(self._T, n_samples, n0)
+    def sample(self, n_samples=None, random_state=None):
+        """ Sample from equilibrium distribution
+
+        Parameters
+        ----------
+        n_samples : int or iterable of int
+            The number of samples to sample from equilibrium distribution. If
+            provided list of integers, list of samples is returned with the
+            same shape provided
+        random_state : int, optional, default: None
+            Set seed for random number generator.
+
+        Returns
+        -------
+        samples : list of ints
+            List of states sampled from equilibrium distribution.
+        """
+        
+        return equilibrium.sample(self.equilibrium, n_samples, random_state)
+
+    def simulate(self, n_samples=None, n0=None, random_state=None):
+        """ Generate Markov chain from transition matrix
+
+        Parameters
+        ----------
+        n_samples : int or iterable of int
+            The number of samples to sample from equilibrium distribution. If
+            provided list of integers, list of samples is returned with the
+            same shape provided
+        n0 : int
+            The initial state for **all** simulations to start. If None, then
+            initial states are generated at random.
+        random_state : int, optional, default: None
+            Set seed for random number generator.
+
+        Returns
+        -------
+        simulations : list of ints
+            Markov chain generated from transition matrix.
+        """
+
+        return equilibrium.simulate(self._T, n_samples, n0, random_state)
 
     @property
     def transition_matrix(self):
+        """ Transition matrix of the Markov chain """
+
         if hasattr(self, '_T'):
             return self._T
 
     @property
     def metastability(self):
+        """ Crisp metastability estimated by the trace of the T matrix """
+
         return np.trace(self._T)
 
     @property
     def equilibrium(self):
+        """ Returns the equilibrium (stationary) distribution """
+
         if not hasattr(self , '_pi'):
             self._pi = equilibrium.distribution(self._T, sparse=self._is_sparse)
         return self._pi
 
     def eigenvalues(self, **kwargs):
+        """Compute eigenvalues of transition matrix.
+
+        Parameters
+        ---------_
+        k : int, optional
+            The number of eigenvalues and eigenvectors desired. k must be smaller
+            than N. It is not possible to compute all eigenvectors of a matrix.
+        ncv : int, optional (default: min(n, max(2*k + 1, 20)))
+            If the MarkovChain is initialized as a sparse, then the number of
+            Lanczos vectors generated (ncv) must be greater than k; it is
+            recommended that ncv > 2*k.
+
+        Returns
+        -------
+        w : float, numpy.ndarray, shape=(k,)
+            Array of k eigenvalues.
+        """
+
         return eigen.values(self._T, self._is_sparse, **kwargs)
 
     def eigenvectors(self, method='both', **kwargs):
+        """ Compute eigenvectors of transition matrix.
+
+        Parameters
+        ---------
+        k : int, optional
+            The number of eigenvalues and eigenvectors desired. k must be smaller
+            than N. It is not possible to compute all eigenvectors of a matrix.
+        ncv : int, optional (default: min(n, max(2*k + 1, 20)))
+            If the MarkovChain is initialized as a sparse, then the number of
+            Lanczos vectors generated (ncv) must be greater than k; it is
+            recommended that ncv > 2*k.
+        method : str, {'left', 'right', 'both'}, default: 'both'
+            Indicates if returns left, right, or both eigenvectors.
+
+        Returns
+        -------
+        L : (k, k) numpy.ndarray
+            Matrix of left eigenvectors.
+        R : (k, k) numpy.ndarray
+            Matrix of right eigenvectors.
+        """
+
         return eigen.vectors(self._T, method, self._is_sparse, **kwargs)
 
-    def left_eigenvector(self, method='left', **kwargs):
-        return self.eigenvectors(method, **kwargs)
+    def left_eigenvector(self, **kwargs):
+        """ Compute left eigenvectors of transition matrix.
 
-    def right_eigenvector(self, method='right', **kwargs):
-        return self.eigenvectors(method, **kwargs)
+        Parameters
+        ---------
+        k : int, optional
+            The number of eigenvalues and eigenvectors desired. k must be smaller
+            than N. It is not possible to compute all eigenvectors of a matrix.
+        ncv : int, optional (default: min(n, max(2*k + 1, 20)))
+            If the MarkovChain is initialized as a sparse, then the number of
+            Lanczos vectors generated (ncv) must be greater than k; it is
+            recommended that ncv > 2*k.
+
+        Returns
+        -------
+        L : (k, k) numpy.ndarray
+            Matrix of left eigenvectors.
+        """
+
+        return self.eigenvectors('left', **kwargs)
+
+    def right_eigenvector(self, **kwargs):
+        """ Compute right eigenvectors of transition matrix.
+
+        Parameters
+        ---------
+        k : int, optional
+            The number of eigenvalues and eigenvectors desired. k must be smaller
+            than N. It is not possible to compute all eigenvectors of a matrix.
+        ncv : int, optional (default: min(n, max(2*k + 1, 20)))
+            If the MarkovChain is initialized as a sparse, then the number of
+            Lanczos vectors generated (ncv) must be greater than k; it is
+            recommended that ncv > 2*k.
+
+        Returns
+        -------
+        R : (k, k) numpy.ndarray
+            Matrix of right eigenvectors.
+        """
+
+        return self.eigenvectors('right', **kwargs)
 
     def mfpt(self, origin, target=None):
+        """ Mean first passage time
+
+        Parameters
+        ----------
+        origin : int or iterable of ints
+            Set of starting states.
+        target : int or iterable of ints
+            Set of target states.
+
+        Returns
+        -------
+        mfpt : float, numpy.ndarray
+            Mean first passage time or vector of mean first passage times.
+        """
+
         return equilibrium.mfpt(self._T, origin, target, self._is_sparse)
 
     def timescales(self, k=None, **kwargs):
+        """ Implied Timescales
+
+        Parameters
+        ----------
+        k : int, optional
+            Number of implied timescales to calculate. Must be less than the
+            number of states within Markov chain. If None provided, then all
+            implied timescales are calculated.
+        ncv : int, optional (default: min(n, max(2*k + 1, 20)))
+            If the MarkovChain is initialized as a sparse, then the number of
+            Lanczos vectors generated (ncv) must be greater than k; it is
+            recommended that ncv > 2*k.
+
+        Returns
+        -------
+        its : float, numpy.ndarray
+            Implied timescales of the transition matrix given by
+            :math:`t_i = \frac{-\tau}{\ln |\lambda_i|}`
+
+        See Also
+        --------
+            Markov_Models.estimation.eigen.values, scipy.linalg.eig,
+            scipy.sparse.linalg.eigs
+        """
+
         return equilibrium.timescales(self, k=k, **kwargs)
 
 
@@ -191,6 +463,7 @@ class DiscreteModel(BaseDiscreteModel):
     n_states : int
         Number of discrete states (or nodes) within the chain.
     """
+
     def __init__(self, T, **kwargs):
         self._is_sparse = kwargs.get('sparse', False)
         self.lag = kwargs.get('lag', 1)
@@ -222,25 +495,29 @@ class DiscreteEstimator(BaseDiscreteModel):
     Notes
     -----
     Naive estimation of the transition matrix, simply row normalizes the
-    observed counts from all states i to j over lag time `\tau` according
-    to `\frac{C_{ij}(\tau)}{\sum_{j=1}^{N} C_{ij}}`. This method does **not**
-    necessarily enforce detailed-balance, a requirement to Markov statistics.
+    observed counts from all states i to j over lag time :math:`\tau` according
+    to :math:`\frac{C_{ij}(\tau)}{\sum_{j=1}^{N} C_{ij}}`. This method does
+    **not** necessarily enforce detailed-balance, a requirement to Markov
+    statistics.
 
     Symmetric estimation enforces detailed-balance by averaging the forward
-    and backward transitions such that `\bar{C}_{ij} = \bar{C}_{ji} =
-    \frac{C_{ij} + C_{ji}}{2}`. It is not guaranteed that simulations whose
-    underlying distribution obeys Markov statistics will exhibit a symmetric
-    count transitions under the limit of ergodic sampling. The symmetrized
-    count matrix (`\bar{C}`) is row normalized identically to the Naive
-    estimator. [1]
+    and backward transitions such that
+    :math:`\bar{C}_{ij} = \bar{C}_{ji} = \frac{C_{ij} + C_{ji}}{2}`. It is not
+    guaranteed that simulations whose underlying distribution obeys Markov
+    statistics will exhibit a symmetric count transitions under the limit of
+    ergodic sampling. The symmetrized count matrix (:math:`\bar{C}`) is row
+    normalized identically to the Naive estimator. [1]
 
     The Prinz method employs a maximum likelihood estimation scheme detailed in
     their JCP [2] paper, which gives an excellent review of standard methods to
     estimate transition matrices from noisey time-series data.
 
+    References
+    ----------
     [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov State Models."
     [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics: Generation and validation."
     """
+
     def __init__(self, **kwargs):
         self._method = kwargs.get('method', 'prinz')
         self._is_sparse = kwargs.get('sparse', False)
@@ -249,6 +526,18 @@ class DiscreteEstimator(BaseDiscreteModel):
         self.max_iter = kwargs.get('max_iter', 1000)
 
     def fit(self, X):
+        """ Fit Markov chain from sequence
+
+        Parameters
+        ----------
+        X : DiscreteSequence or array-like, shape=(n_sets, n_samples,)
+            A sequence of discrete sequences.
+
+        Returns
+        -------
+        self
+        """
+
         if not isinstance(X, DiscreteSequence):
             X = DiscreteSequence(X)
 

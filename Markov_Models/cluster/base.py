@@ -5,19 +5,22 @@ from scipy.spatial.distance import cdist
 
 
 class ContinuousClusterMixin(object):
-    ''' Simple tool to assist passing multiple sequences of continuous data to
-    the Scikit-Learn cluster API.'''
+    """ Simple tool to assist passing multiple sequences of continuous data to
+    the Scikit-Learn cluster API."""
 
     def fit(self, X, y=None):
-        '''Fit clustering model on the data
+        """ Fit clustering model on the data
+
         Parameters
         ----------
         X : array-like shape=(n_sets, n_samples, n_features)
             A sequence of continuous trajectory data.
+
         Returns
         -------
         self
-        '''
+        """
+
         X = ContinuousSequence(X)
         super(ContinuousClusterMixin, self).fit(X.concatenate())
 
@@ -36,16 +39,19 @@ class ContinuousClusterMixin(object):
         return self
 
     def predict(self, X, y=None):
-        '''Predict the closest cluster to each sample in X.
+        """ Predict the closest cluster to each sample in X.
+
         Parameters
         ----------
         X : array-like shape=(n_sets, n_samples, n_features)
             A sequence of continuous trajectory data.
+
         Returns
         -------
         labels : array, shape=(n_samples,)
             Index of the cluster that each sample belongs to
-        '''
+        """
+
         X = ContinuousSequence(X)
         labels = []
         for xi in X.values:

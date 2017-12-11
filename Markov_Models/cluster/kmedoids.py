@@ -6,8 +6,8 @@ from sklearn.utils import check_array, check_random_state
 
 
 class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
-    """
-    k-medoids class.
+    """ K-Medoids Class
+
     Parameters
     ----------
     n_clusters : int, optional, default: 8
@@ -25,7 +25,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
     disp : bool, option, default: False
         Print output statistics on fit.
     """
-
+    
     def __init__(self, n_clusters=10, metric='euclidean', init='heuristic',
                  max_iter=300, random_state=None, disp=False):
 
@@ -38,13 +38,14 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         self._disp = disp
 
     def fit(self, X, y=None):
-        """Fit K-Medoids to the provided data.
+        """ K-medoids fit method
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
-        Returns
-        -------
-        self
+            Training data to fit model
+        y : None
+            Necessary for Scikit-Learn BaseEstimator
         """
 
         # Apply distance metric to get the distance matrix
@@ -76,7 +77,8 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         return self
 
     def transform(self, X):
-        '''Transforms X to cluster-distance space.
+        """Transforms X to cluster-distance space.
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
@@ -85,7 +87,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         -------
         X_new : array, shape=(n_samples, n_clusters)
             X transformed in the new space.
-        '''
+        """
         assert hasattr(self, "cluster_centers_"), 'Model must be fit'
         X = check_array(X)
         return self._distance_func(X, Y=self.cluster_centers_)
@@ -108,11 +110,11 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         return medoids
 
     def _k_labels(self, D, medoids):
-        '''Labels medoids by minimized distance'''
+        """ Labels medoids by minimized distance """
         return np.argmin(D[medoids, :], axis=0)
 
     def _k_update(self, D, labels, medoids):
-        """In-place update of the medoid indices"""
+        """ In-place update of the medoid indices """
         for k in range(self.n_clusters):
             if sum(labels == k) == 0:
                 print("Cluster {:d} is empty!".format(k))

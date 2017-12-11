@@ -3,6 +3,8 @@ from . import _mle_tmat_prinz
 
 
 def transition_matrix(C, method, **kwargs):
+    """ Helper function to run transition matrix calculation by method """
+
     if method.lower() == 'prinz':
         return prinz(C, **kwargs)
     elif method.lower() == 'symmetric':
@@ -12,15 +14,53 @@ def transition_matrix(C, method, **kwargs):
 
 
 def naive(C):
+    """ Naive estimator (non-reversible)
+
+    Notes
+    -----
+    Naive estimation of the transition matrix, simply row normalizes the
+    observed counts from all states i to j over lag time :math:`\tau` according
+    to :math:`\frac{C_{ij}(\tau)}{\sum_{j=1}^{N} C_{ij}}`. This method does
+    **not** necessarily enforce detailed-balance, a requirement to Markov
+    statistics.
+    """
     return C / C.sum(1)[:, None]
 
 
 def symmetric(C):
+    """ Symmetric estimator (reversible)
+
+    Notes
+    -----
+    Symmetric estimation enforces detailed-balance by averaging the forward
+    and backward transitions such that
+    :math:`\bar{C}_{ij} = \bar{C}_{ji} = \frac{C_{ij} + C_{ji}}{2}`. It is not
+    guaranteed that simulations whose underlying distribution obeys Markov
+    statistics will exhibit a symmetric count transitions under the limit of
+    ergodic sampling. The symmetrized count matrix (:math:`\bar{C}`) is row
+    normalized identically to the Naive estimator. [1]
+
+    References
+    ----------
+    [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov State Models."
+    """
     Cs = 0.5 * (C + C.T)
     return Cs / Cs.sum(1)[:, None]
 
 
 def prinz(C, tol=1e-4, max_iter=1000):
+    """ Maximum Likelihood Estimator developed by Prinz et al
+
+    Notes
+    -----
+    The Prinz method employs a maximum likelihood estimation scheme detailed in
+    their JCP [2] paper, which gives an excellent review of standard methods to
+    estimate transition matrices from noisey time-series data.
+
+    References
+    ----------
+    [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics: Generation and validation."
+    """
     return np.asarray(_mle_tmat_prinz.transition_matrix(C, tol, max_iter))
 
 
