@@ -29,6 +29,7 @@ from Markov_Models.models import MarkovChain
 import numpy as np
 
 # Generate a pseudo count matrix
+np.random.seed(42)
 C = np.random.randint(0, 100000, size=(2, 2))
 
 # Create transition matrix by Symmetric estimation
@@ -43,7 +44,7 @@ model = MarkovChain(T=T)
 
 ```python
 # Generate a random discrete sequence
-seq = model.simulate(1000000)
+seq = model.simulate(1000000, random_state=42)
 
 # Initial and fit the Markov chain
 estimator = MarkovChain().fit(seq)
