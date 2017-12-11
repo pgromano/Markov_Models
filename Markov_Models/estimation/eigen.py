@@ -4,7 +4,8 @@ from scipy.sparse.linalg import eigs
 
 
 def values(T, sparse, k=None, ncv=None):
-    r'''Compute eigenvalues of transition matrix.
+    """Compute eigenvalues of transition matrix.
+
     Parameters
     ---------_
     T : (n, n) numpy.ndarray
@@ -12,14 +13,16 @@ def values(T, sparse, k=None, ncv=None):
     k : int, optional
         The number of eigenvalues and eigenvectors desired. k must be smaller
         than N. It is not possible to compute all eigenvectors of a matrix.
-    ncv : int, option
+    ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k; it
-        is recommended that ncv > 2*k. Default: min(n, max(2*k + 1, 20))
+        is recommended that ncv > 2*k. default: min(n, max(2*k + 1, 20))
+
     Returns
     -------
     w : (k,) numpy.ndarray
         Array of k eigenvalues.
-    '''
+    """
+
     if sparse:
         if k is None:
             k = int(min(T.shape[0] - 2, 6))
@@ -43,8 +46,8 @@ def values(T, sparse, k=None, ncv=None):
 
 
 def vectors(T, method, sparse, k=None, ncv=False):
-    r'''
-    Compute eigenvalues of transition matrix.
+    """ Compute eigenvectorss of transition matrix.
+
     Parameters
     ---------
     T : (n, n) numpy.ndarray
@@ -52,9 +55,10 @@ def vectors(T, method, sparse, k=None, ncv=False):
     k : int, optional
         The number of eigenvalues and eigenvectors desired. k must be smaller
         than N. It is not possible to compute all eigenvectors of a matrix.
-    ncv : int, option
+    ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k; it
-        is recommended that ncv > 2*k. Default: min(n, max(2*k + 1, 20))
+        is recommended that ncv > 2*k. default: min(n, max(2*k + 1, 20))
+
     Returns
     -------
     w : (k,) numpy.ndarray
@@ -63,7 +67,8 @@ def vectors(T, method, sparse, k=None, ncv=False):
         Matrix of left eigenvectors.
     R : (k, k) numpy.ndarray
         Matrix of right eigenvectors.
-    '''
+    """
+
     if sparse is True:
         if k is None:
             k = min(T.shape[0] - 2, 6)

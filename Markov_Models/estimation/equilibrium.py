@@ -42,33 +42,27 @@ def mfpt(T, origin, target=None, sparse=False):
         return np.dot(A, B[origin])
 
 
-def sample(pi, size=None):
-    '''
-    Randomly samples the equilibrium distribution
-
-    pi:
-    '''
-    return np.random.choice(np.arange(len(pi)), p=pi, size=size)
+def sample(pi, n_samples, random_state):
+    np.random.seed(random_state)
+    return np.random.choice(np.arange(len(pi)), p=pi, size=n_samples)
 
 
-def simulate(T, n_samples, n0):
-    '''
-    Runs a simulation from the transition matrix
-
-    T:
-    n_samples:
-    n0:
-    '''
+def simulate(T, n_samples, n0, random_state):
+    if n_samples is None:
+        n_samples = 1
 
     if isinstance(n_samples, int):
-        return np.asarray(_simulate.simulate(T, n_samples, n0, 1))
+        return np.asarray(_simulate.simulate(T, n_samples,
+                                             n0, 1, random_state))
     else:
         if len(n_samples) == 1:
             X = np.asarray(_simulate.simulate(
-                           T, np.int(np.product(n_samples)), n0, 1))
+                           T, np.int(np.product(n_samples)),
+                           n0, 1, random_state))
         else:
             X = np.asarray(_simulate.simulate(
-                           T, np.int(np.product(n_samples)), n0, n_samples[0]))
+                           T, np.int(np.product(n_samples)),
+                           n0, n_samples[0], random_state))
     return X.reshape(n_samples)
 
 
