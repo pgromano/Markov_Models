@@ -1,5 +1,4 @@
 import numpy as np
-
 from sklearn.base import BaseEstimator, ClusterMixin, TransformerMixin
 from sklearn.neighbors import DistanceMetric
 from sklearn.utils import check_array, check_random_state
@@ -25,7 +24,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
     disp : bool, option, default: False
         Print output statistics on fit.
     """
-    
+
     def __init__(self, n_clusters=10, metric='euclidean', init='heuristic',
                  max_iter=300, random_state=None, disp=False):
 
