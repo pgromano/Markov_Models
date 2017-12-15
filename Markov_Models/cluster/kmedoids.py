@@ -30,10 +30,10 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
 
         self.n_clusters = n_clusters
         self.metric = metric
+        self._distance = DistanceMetric.get_metric(metric).pairwise
         self.init = init
         self.max_iter = max_iter
         self.random_state = check_random_state(random_state)
-        self._distance_func = DistanceMetric.get_metric(metric).pairwise
         self._disp = disp
 
     def fit(self, X, y=None):
@@ -49,7 +49,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
 
         # Apply distance metric to get the distance matrix
         X = check_array(X)
-        D = self._distance_func(X)
+        D = self._distance(X)
 
         # Old medoids will be stored here for reference
         medoids = self._k_init(D, self.n_clusters)
@@ -89,7 +89,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         """
         assert hasattr(self, "cluster_centers_"), 'Model must be fit'
         X = check_array(X)
-        return self._distance_func(X, Y=self.cluster_centers_)
+        return self._distance(X, Y=self.cluster_centers_)
 
     def predict(self, X):
         Xtr = self.transform(X)

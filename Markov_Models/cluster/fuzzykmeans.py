@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.spatial.distance import cdist
 from sklearn.cluster import KMeans, k_means_
+from sklearn.neighbors import DistanceMetric
 from sklearn.utils import check_array, check_random_state, extmath
 from copy import deepcopy
 
@@ -8,13 +8,16 @@ from copy import deepcopy
 class _FuzzyKMeans(KMeans):
     __doc__ = KMeans.__doc__
 
-    def __init__(self, n_clusters=8, fuzziness=2, init='k-means++', n_init=10,
-                 max_iter=300, tol=1e-4, precompute_distances='auto',
+    def __init__(self, n_clusters=8, fuzziness=2, metric='euclidean',
+                 precompute_distances='auto', init='k-means++', n_init=10,
+                 max_iter=300, tol=1e-4,
                  verbose=0, random_state=None, copy_x=True,
                  n_jobs=1, algorithm='auto', store_labels=False):
 
         self.n_clusters = n_clusters
         self.fuzziness = fuzziness
+        self.metric = metric
+        self._distance = DistanceMetric.get_metric(metric).pairwise
         self.init = init
         self.max_iter = max_iter
         self.tol = tol
@@ -39,7 +42,7 @@ class _FuzzyKMeans(KMeans):
                 init_size=None)
 
         # Expectation-Maximization
-        for i in range(self.max_iter):
+        for n_iter in range(self.max_iter):
             centroids_old = deepcopy(self.cluster_centers_)
             self._e_step(X)
             self._m_step(X)
@@ -55,7 +58,7 @@ class _FuzzyKMeans(KMeans):
         m = self.fuzziness
 
         # Compute distance to centroids
-        D = cdist(X, self.cluster_centers_)
+        D = self._distance(X, self.cluster_centers_)
 
         # Check for null-distances and add dummy value
         row, col = np.where(D == 0.0)
