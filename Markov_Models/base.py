@@ -262,7 +262,7 @@ class BaseDiscreteModel(object):
         samples : list of ints
             List of states sampled from equilibrium distribution.
         """
-        
+
         return equilibrium.sample(self.equilibrium, n_samples, random_state)
 
     def simulate(self, n_samples=None, n0=None, random_state=None):
@@ -470,6 +470,55 @@ class DiscreteModel(BaseDiscreteModel):
         self._T = T
         self.n_states = self._T.shape[0]
 
+    def score(self, objective=None):
+        """ Score the Markov model
+
+        Parameters
+        ----------
+        objective : {'CM', 'PR', 'GMRQ'}
+            Method by which to calculates a score for the Markov chain.
+
+        Returns
+        -------
+        score : float
+            Score calculated by chosen objective.
+
+        Notes
+        -----
+        The crisp metastability (CM) metric, given by the sum along the
+        transition matrix, :math:`tr(T)`, scores the model by how metastable
+        the sum of all state are.
+
+        The persistence ratio (PR), given by the :math:`tr(T)/n`, is the ratio
+        of the crisp metastability over the number of states in the chain. It
+        gives the likelihood that a Markov process remain in a state, as
+        opposed to transitioning.
+
+        The generalized matrix Rayleigh quotient (GMRQ) is approximated as the
+        sum of the eigenvalues of the transition matrix. [1]
+
+        References
+        ----------
+        [1] McGibbon, R. T. and V. S. Pande, JCP 142, 124105 (2015),
+            “Variational cross-validation of slow dynamical modes in molecular
+            kinetics”
+
+        See Also
+        --------
+            Markov_Models.base.DiscreteEstimator
+        """
+
+        if objective is None:
+            return np.trace(self._T)
+        elif objective.lower() == 'cm':
+            return np.trace(self._T)
+        elif objective.lower() == 'pr':
+            return np.trace(self._T) / self._T.shape[0]
+        elif objective.lower() == 'gmrq':
+            return np.sum(self.eigenvalues())
+        else:
+            raise ValueError('Objective {:s} not implemented'.format(objective))
+
 
 class DiscreteEstimator(BaseDiscreteModel):
     """ Estimator for discrete Markov chains
@@ -514,8 +563,10 @@ class DiscreteEstimator(BaseDiscreteModel):
 
     References
     ----------
-    [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov State Models."
-    [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics: Generation and validation."
+    [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov
+        State Models."
+    [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics:
+        Generation and validation."
     """
 
     def __init__(self, **kwargs):
@@ -550,3 +601,64 @@ class DiscreteEstimator(BaseDiscreteModel):
         check_transition_matrix(self._T)
         self.n_states = self._T.shape[0]
         return self
+
+    def score(self, X=None, objective=None, **kwargs):
+        """ Score the Markov model
+
+        Parameters
+        ----------
+        X : DiscreteSequence or array-like, shape=(n_sets, n_samples,)
+            A sequence of discrete sequences. If given, the objective estimates a
+            discrete Markov chain and scores the model accordingly. Otherwise,
+            the score is based on the given model.
+        objective : {'CM', 'PR', 'GMRQ'}
+            Method by which to calculates a score for the Markov chain.
+        **kwargs
+            Key-word arguments to select conditions for estimating Markov
+            chain.
+
+        Returns
+        -------
+        score : float
+            Score calculated by chosen objective.
+
+        Notes
+        -----
+        The crisp metastability (CM) metric, given by the sum along the
+        transition matrix, :math:`tr(T)`, scores the model by how metastable
+        the sum of all state are.
+
+        The persistence ratio (PR), given by the :math:`tr(T)/n`, is the ratio
+        of the crisp metastability over the number of states in the chain. It
+        gives the likelihood that a Markov process remain in a state, as
+        opposed to transitioning.
+
+        The generalized matrix Rayleigh quotient (GMRQ) is approximated as the
+        sum of the eigenvalues of the transition matrix. [1]
+
+        References
+        ----------
+        [1] McGibbon, R. T. and V. S. Pande, JCP 142, 124105 (2015),
+            “Variational cross-validation of slow dynamical modes in molecular
+            kinetics”
+
+        See Also
+        --------
+            Markov_Models.base.DiscreteEstimator
+        """
+
+        if X is None:
+            new_model = deepcopy(self)
+        else:
+            new_model = deepcopy(self.__class__(**kwargs).fit(X))
+
+        if objective is None:
+            return np.trace(self._T)
+        elif objective.lower() == 'cm':
+            return np.trace(self._T)
+        elif objective.lower() == 'pr':
+            return np.trace(self._T) / self._T.shape[0]
+        elif objective.lower() == 'gmrq':
+            return np.sum(self.eigenvalues())
+        else:
+            raise ValueError('Objective {:s} not implemented'.format(objective))
