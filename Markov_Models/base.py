@@ -245,6 +245,37 @@ class BaseDiscreteModel(object):
     analysis.
     """
 
+    def populate(self, n_iter, p=None, random_state=None):
+        """ Evolve population vector
+
+        Parameters
+        ----------
+        n_iter : int
+            The number of iterations to evolve a starting population vector.
+        p : array-like iterable, shape=(n_states,), default=None
+            A population vector that is evolved by the transition matrix.
+            Vector must sum to 1 and have the same number of states as the
+            transtition matrix.
+        random_state : int, default=None
+            Sets the seed for the random generation of the starting population
+            vector.
+
+        Returns
+        -------
+        p_n : numpy.ndarray, shape=(n_states, )
+            The final population after propagating over n_iter.
+        """
+
+        n_states = self._T.shape[0]
+        if p is None:
+            np.random.seed(random_state)
+            p = np.eye(n_states)[np.random.randint(0, n_states)]
+        else:
+            assert np.shape(p)[0] == n_states, "Number of states do not match"
+            assert np.allclose(np.sum(p), 1), "Not a valid population vector"
+
+        return np.matmul(p, np.linalg.matrix_power(self._T, n_iter))
+
     def sample(self, n_samples=None, random_state=None):
         """ Sample from equilibrium distribution
 
