@@ -67,6 +67,5 @@ def simulate(T, n_samples, n0, random_state):
 
 
 def timescales(self, **kwargs):
-    t = -self.lag / np.log(abs(self.eigenvalues(**kwargs)))
-    t[0] = np.inf
-    return t
+    t = -self.lag / np.log(abs(self.eigenvalues(**kwargs)[1]))
+    return np.append(np.inf, t)
