@@ -1,6 +1,6 @@
 from . import base as _base
 from .k_means import _KMeans, _FuzzyKMeans
-from .kmedoids import _KMedoids
+from .k_medoids import _KMedoids
 from sklearn import cluster as _cluster
 
 
