@@ -1,5 +1,5 @@
 from . import base as _base
-from .fuzzykmeans import _FuzzyKMeans
+from .k_means import _KMeans, _FuzzyKMeans
 from .kmedoids import _KMedoids
 from sklearn import cluster as _cluster
 
@@ -32,8 +32,8 @@ class KMedoids(_base.ContinuousClusterMixin, _KMedoids):
     __doc__ = _KMedoids.__doc__
 
 
-class KMeans(_base.ContinuousClusterMixin, _cluster.KMeans):
-    __doc__ = _cluster.KMeans.__doc__
+class KMeans(_base.ContinuousClusterMixin, _KMeans):
+    __doc__ = _KMeans.__doc__
 
 
 class MeanShift(_base.ContinuousClusterMixin, _cluster.MeanShift):
