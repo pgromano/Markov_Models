@@ -13,5 +13,5 @@ def _count(X, lag, n_states, sparse):
 
 
 def count_matrix(X, lag=1, sparse=False):
-    C = [_count(X.values[i], lag, X.n_states, sparse) for i in range(X.n_sets)]
+    C = [_count(val, lag, X.n_states, sparse) for val in X._values]
     return np.sum(C, axis=0)

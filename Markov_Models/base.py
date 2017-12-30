@@ -1,6 +1,7 @@
 from .estimation import count_matrix, transition_matrix, eigen, equilibrium
-from .utils.validation import check_array, check_transition_matrix
+from .utils.validation import check_sequence, check_transition_matrix
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from copy import deepcopy
 
 
@@ -31,18 +32,7 @@ class ContinuousSequence(object):
         if isinstance(X, ContinuousSequence):
             self.__dict__ = X.__dict__
         else:
-            if isinstance(X, list):
-                self.values = [check_array(xi, dtype=float, rank=2) for xi in X]
-            elif isinstance(X, np.ndarray):
-                if len(X.shape) == 2:
-                    self.values = [check_array(X, dtype=float, rank=2)]
-                elif len(X.shape) == 3:
-                    self.values = [xi for xi in X]
-                else:
-                    raise ValueError('Continuous sequence must be rank 2 or 3.')
-            else:
-                raise ValueError('Input data unrecognized.')
-
+            self.values = check_sequence(X, rank=2)
             self.n_sets = len(self.values)
             self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
             assert all([self.values[0].shape[1] == self.values[i].shape[1]
@@ -156,21 +146,16 @@ class DiscreteSequence(object):
         if isinstance(X, DiscreteSequence):
             self.__dict__ = X.__dict__
         else:
-            if isinstance(X, list):
-                self.values = [check_array(xi, dtype=int, rank=1) for xi in X]
-            elif isinstance(X, np.ndarray):
-                if len(X.shape) == 1:
-                    self.values = [check_array(X, dtype=int, rank=1)]
-                elif len(X.shape) == 2:
-                    self.values = [xi for xi in X]
-                elif len(X.shape) > 2:
-                    raise ValueError('Discrete sequence data must be 1D.')
-            else:
-                raise ValueError('Input data unrecognized.')
+            self.values = check_sequence(X, rank=1)
+            encoder = LabelEncoder().fit(np.concatenate(self.values))
+            self._values = [encoder.transform(val) for val in self.values]
+            self.labels = encoder.classes_
 
-            self.n_sets = len(self.values)
-            self.n_samples = [self.values[i].shape[0] for i in range(self.n_sets)]
-            self.n_states = np.amax(self.values) + 1
+            self.n_sets = len(self._values)
+            self.n_samples = [val.shape[0] for val in self._values]
+            self.n_states = np.amax([np.amax(val) for val in self._values]) + 1
+            self.transform = encoder.transform
+            self.inverse_transform = encoder.inverse_transform
 
     def counts(self, return_labels=True):
         """ Count the number of unique elements
@@ -193,10 +178,7 @@ class DiscreteSequence(object):
             numpy.unique
         """
 
-        labels, counts = np.unique(self.values, return_counts=True)
-        if return_labels:
-            return labels, counts
-        return counts
+        return np.unique(self.values, return_counts=return_labels)
 
     def sample(self, size=None, replace=True):
         """ Uniformly sample from sequence data
@@ -294,7 +276,8 @@ class BaseDiscreteModel(object):
             List of states sampled from equilibrium distribution.
         """
 
-        return equilibrium.sample(self.equilibrium, n_samples, random_state)
+        obs = equilibrium.sample(self.equilibrium, n_samples, random_state)
+        return self._to_labels(obs)
 
     def simulate(self, n_samples=None, n0=None, random_state=None):
         """ Generate Markov chain from transition matrix
@@ -317,7 +300,9 @@ class BaseDiscreteModel(object):
             Markov chain generated from transition matrix.
         """
 
-        return equilibrium.simulate(self._T, n_samples, n0, random_state)
+        obs = equilibrium.simulate(self._T, n_samples, n0, random_state)
+        return self._to_labels(obs)
+
 
     @property
     def transition_matrix(self):
@@ -620,8 +605,12 @@ class DiscreteEstimator(BaseDiscreteModel):
         self
         """
 
-        if not isinstance(X, DiscreteSequence):
-            X = DiscreteSequence(X)
+        # Convert to DiscreteSequence class
+        X = DiscreteSequence(X)
+
+        # Set label encoder
+        self._from_labels = X.transform
+        self._to_labels = X.inverse_transform
 
         # Calculate Count and Transition Matrix
         self._C = count_matrix(X, self.lag, self._is_sparse)

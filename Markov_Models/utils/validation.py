@@ -6,13 +6,31 @@ def check_irreducible(X):
         raise ValueError('Sequence does not sample all states.')
 
 
-def check_array(X, dtype=None, rank=1):
-    X = np.array(X)
-    if not len(X.shape) == rank:
-        raise ValueError('Array rank must be {:d}'.format(rank))
-    if dtype is not None:
-        return X.astype(dtype)
-    return X
+def check_sequence(X, rank=1, dtype=None):
+    def iscontainer(X):
+        if isinstance(X, (list, tuple)):
+            if isinstance(X[0], (list, tuple, np.ndarray)):
+                return True
+        if isinstance(X, np.ndarray):
+            if np.ndim(X) == rank + 1:
+                return True
+        return False
+
+    # Check X is iterable
+    if not isinstance(X, (list, tuple, np.ndarray)):
+        raise ValueError("""Sequence must be iterable of type list, tuple, or numpy.ndarray.""")
+
+    # Check whether X is a container of many sequences
+    if iscontainer(X):
+        assert np.ndim(X[0]) == rank, "Sequence must be rank {:d}".format(rank)
+        if dtype is not None:
+            return [np.array(xi, dtype=dtype) for xi in X]
+        return [np.array(xi) for xi in X]
+    else:
+        assert np.ndim(X) == rank, "Sequence must be rank {:d}".format(rank)
+        if dtype is not None:
+            return [np.array(X, dtype=dtype)]
+        return [np.array(X)]
 
 
 def check_transition_matrix(T):
