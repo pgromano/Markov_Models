@@ -13,7 +13,7 @@ def transition_matrix(double[:,:] C, np.float tol, np.int max_iter):
     cdef double[:] cs = np.zeros(n_states).astype(np.float64)
     cdef double likelihood = 0
     cdef double likelihood_prev = 1e6
-    cdef int i, j, k, n_iter
+    cdef int i, j, k, iteration
     cdef double val_a, val_b, val_c, tmp
 
     # Uncondintional transition matrix $X_{i, j} = \pi_i T_{i, j}$
@@ -31,16 +31,19 @@ def transition_matrix(double[:,:] C, np.float tol, np.int max_iter):
             print('Null populated states!')
             break
 
-    n_iter = 0
+    iteration = 0
     while abs(likelihood - likelihood_prev) >= tol:
+        # Set new and old likelihood
         likelihood_prev = likelihood
         likelihood = 0
 
-        n_iter += 1
-        if n_iter > max_iter:
-            print('Method failed to converge after ' + str(max_iter) + ' n_iters. Try either increasing tolerance or increasing maximum number of n_iters.')
+        # Check for max iteration
+        iteration += 1
+        if iteration >= max_iter:
+            print('Method failed to converge after ' + str(max_iter) + ' iterations. Try either increasing tolerance or increasing maximum number of iterations.')
             break
 
+        # Initialize xs
         for i in range(n_states):
             tmp = X[i, i]
             if cs[i] - C[i, i] > 0:
@@ -56,6 +59,7 @@ def transition_matrix(double[:,:] C, np.float tol, np.int max_iter):
             if X[i, i] > 0:
                 likelihood = likelihood + C[i, i]*np.log(X[i, i] / xs[i])
 
+        # Compute likelihood
         for i in range(n_states):
             for j in range(n_states):
                 # a parameter value
@@ -75,20 +79,19 @@ def transition_matrix(double[:,:] C, np.float tol, np.int max_iter):
                 if val_a == 0:
                     tmp = X[j, i]
                 else:
-                    tmp = (-val_b + np.sqrt(val_b*val_b - 4*val_a*val_c)) / (2*val_a)
+                    tmp = (-val_b + np.sqrt(val_b * val_b - 4 * val_a * val_c)) / (2 * val_a)
 
                 xs[i] = xs[i] + (tmp - X[i, j])
                 xs[j] = xs[j] + (tmp - X[j, i])
-
                 X[i, j] = X[j, i] = tmp
 
                 xs[i] = 0
                 for k in range(n_states):
-                    xs[i] = xs[i] + X[i,k]
+                    xs[i] = xs[i] + X[i, k]
 
                 xs[j] = 0
                 for k in range(n_states):
-                    xs[j] = xs[j] + X[j,k]
+                    xs[j] = xs[j] + X[j, k]
 
                 if X[i, j] > 0:
                     likelihood = likelihood + C[i, j] * np.log(X[i, j] / xs[i]) \
