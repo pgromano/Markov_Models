@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClusterMixin, TransformerMixin
 from sklearn.neighbors import DistanceMetric
 from sklearn.utils import check_array, check_random_state
+from copy import deepcopy
 
 
 class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
@@ -53,26 +54,28 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
 
         # Old medoids will be stored here for reference
         medoids = self._k_init(D, self.n_clusters)
-        medoids_prev = np.zeros((self.n_clusters,))
+        medoids_old = np.zeros((self.n_clusters,))
 
-        n_iter = 1
-        while not all(medoids_prev == medoids):
-            if n_iter == self.max_iter:
-                print('Max iterations {:d} exceeded'.format(self.max_iter))
+        iteration = 0
+        while not np.all(medoids_old == medoids):
+            iteration += 1
+            if iteration >= self.max_iter:
+                print("""Method failed to converge after {:d} iterations. Try
+                either increasing tolerance or increasing maximum number of
+                iterations.""".format(self.max_iter))
                 break
 
             # Save copy of previous iteration and update medoids
-            medoids_prev = np.copy(medoids)
+            medoids_old = deepcopy(medoids)
             labels = self._k_labels(D, medoids)
             labels, medoids = self._k_update(D, labels, medoids)
-            n_iter += 1
 
         # Set fit attributes
         self.labels_ = labels
         self.cluster_centers_ = X[medoids]
 
         if self._disp:
-            print('Method terminated after {:d} iterations'.format(n_iter))
+            print('Method terminated after {:d} iterations'.format(iteration))
         return self
 
     def transform(self, X):
@@ -87,6 +90,7 @@ class _KMedoids(BaseEstimator, ClusterMixin, TransformerMixin):
         X_new : array, shape=(n_samples, n_clusters)
             X transformed in the new space.
         """
+
         assert hasattr(self, "cluster_centers_"), 'Model must be fit'
         X = check_array(X)
         return self._distance(X, Y=self.cluster_centers_)

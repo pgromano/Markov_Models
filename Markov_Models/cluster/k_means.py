@@ -14,7 +14,7 @@ class _FuzzyKMeans(KMeans):
                  precompute_distances='auto', init='k-means++', n_init=10,
                  max_iter=300, tol=1e-4,
                  verbose=0, random_state=None, copy_x=True,
-                 n_jobs=1, algorithm='auto', store_labels=False):
+                 n_jobs=1, algorithm='auto', store_labels=False, disp=False):
 
         self.n_clusters = n_clusters
         self.fuzziness = fuzziness
@@ -31,28 +31,40 @@ class _FuzzyKMeans(KMeans):
         self.n_jobs = n_jobs
         self.algorithm = algorithm
         self._store_labels = store_labels
+        self._disp = disp
 
     def fit(self, X, y=None):
         n_samples, n_features = X.shape
 
-        # Initialize centroids
+        # Initialize cluster centers
         x_squared_norms = extmath.row_norms(X, squared=True)
         self.cluster_centers_ = k_means_._init_centroids(
                 X, self.n_clusters, self.init,
                 random_state=self.random_state,
                 x_squared_norms=x_squared_norms,
                 init_size=None)
+        centers_old = np.zeros(self.cluster_centers_.shape)
 
         # Expectation-Maximization
-        for n_iter in range(self.max_iter):
-            centroids_old = deepcopy(self.cluster_centers_)
+        iteration = 0
+        while np.sum((centers_old - self.cluster_centers_)**2) >= self.tol:
+            iteration += 1
+            if iteration >= self.max_iter:
+                print("""Method failed to converge after {:d} iterations. Try
+                either increasing tolerance or increasing maximum number of
+                iterations.""".format(self.max_iter))
+                break
+
+            # Save copy of previous iteration and update centers
+            centers_old = deepcopy(self.cluster_centers_)
             self._e_step(X)
             self._m_step(X)
-            if np.sum((centroids_old - self.cluster_centers_)**2) < self.tol:
-                break
 
         if self._store_labels:
             self.labels_ = self._e_step(X)
+
+        if self._disp:
+            print("Method terminated after {:d} iterations".format(iteration))
         return self
 
     def _e_step(self, X):
