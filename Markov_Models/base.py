@@ -149,7 +149,7 @@ class DiscreteSequence(object):
             self.values = check_sequence(X, rank=1)
             encoder = LabelEncoder().fit(np.concatenate(self.values))
             self._values = [encoder.transform(val) for val in self.values]
-            self.labels = encoder.classes_
+            self.labels_ = encoder.classes_
 
             self.n_sets = len(self._values)
             self.n_samples = [val.shape[0] for val in self._values]
@@ -485,6 +485,16 @@ class DiscreteModel(BaseDiscreteModel):
         self.lag = kwargs.get('lag', 1)
         self._T = T
         self.n_states = self._T.shape[0]
+        self.labels_ = kwargs.get('labels', None)
+        if self.labels_ is None:
+            self.labels_ = np.arange(self.n_states)
+        else:
+            assert len(self.labels_) == self._T.shape[0], "T matrix does not match labels"
+
+        encoder = LabelEncoder().fit(self.labels_)
+        self._from_labels = encoder.transform
+        self._to_labels = encoder.inverse_transform
+
 
     def score(self, objective=None):
         """ Score the Markov model
@@ -611,6 +621,7 @@ class DiscreteEstimator(BaseDiscreteModel):
         # Set label encoder
         self._from_labels = X.transform
         self._to_labels = X.inverse_transform
+        self.labels_ = X.labels_
 
         # Calculate Count and Transition Matrix
         self._C = count_matrix(X, self.lag, self._is_sparse)
