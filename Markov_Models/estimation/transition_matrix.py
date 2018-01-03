@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.preprocessing import normalize
 from . import _mle_tmat_prinz
 
 
@@ -24,7 +25,7 @@ def naive(C):
     **not** necessarily enforce detailed-balance, a requirement to Markov
     statistics.
     """
-    return C / C.sum(1)[:, None]
+    return normalize(C, norm="l1")
 
 
 def symmetric(C):
@@ -45,7 +46,7 @@ def symmetric(C):
     [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov State Models."
     """
     Cs = 0.5 * (C + C.T)
-    return Cs / Cs.sum(1)[:, None]
+    return normalize(Cs, norm="l1")
 
 
 def prinz(C, tol=1e-4, max_iter=1000):
@@ -62,7 +63,3 @@ def prinz(C, tol=1e-4, max_iter=1000):
     [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics: Generation and validation."
     """
     return np.asarray(_mle_tmat_prinz.transition_matrix(C, tol, max_iter))
-
-
-def mcmc(C):
-    pass
