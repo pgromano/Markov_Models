@@ -1,6 +1,6 @@
+from . import _mle_tmat_prinz
 import numpy as np
 from sklearn.preprocessing import normalize
-from . import _mle_tmat_prinz
 
 
 def transition_matrix(C, method, **kwargs):
