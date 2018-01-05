@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.preprocessing import normalize
 from copy import deepcopy
 
 
@@ -11,7 +12,7 @@ class PCCA(object):
         self.psi = psi
         self.ncv = ncv
 
-    def coarse_grain(self, model):
+    def fit(self, model):
         def spread(v):
             return v.max() - v.min()
 
@@ -26,17 +27,22 @@ class PCCA(object):
             index = np.argmax([spread(v[self.chi == mi])
                                for mi in range(ma + 1)])
             self.chi[(self.chi == index) & (v > 0)] = ma + 1
+        return self
 
+    def transform(self, model):
         # Build new coarse-grained model
         new_model = deepcopy(model)
         new_model.n_states = self.n_states
         new_model.crisp_membership = self.chi
 
         S = [np.where(self.chi == ma) for ma in range(self.n_states)]
-        new_model._C = np.zeros((self.n_states, self.n_states))
-        for i in range(self.n_states):
-            for j in range(self.n_states):
-                new_model._C[i, j] = model._C[S[i]][:, S[j]].sum()
-        del new_model._T
-        _ = new_model.transition_matrix
+        new_model._T = np.zeros((new_model.n_states, new_model.n_states))
+        for i in range(new_model.n_states):
+            for j in range(new_model.n_states):
+                new_model._T[i, j] = model._T[i, S[j]].sum()
+        new_model._T = normalize(new_model._T, norm='l1')
         return new_model
+
+    def fit_transform(self, model):
+        self.fit(model)
+        return self.transform(model)

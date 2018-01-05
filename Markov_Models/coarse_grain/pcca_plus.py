@@ -1,5 +1,5 @@
 from __future__ import print_function, absolute_import, division
-from ..utils.validation import check_equilibrium
+from ..utils import check_equilibrium
 import numpy as np
 from scipy.linalg import inv, pinv, norm
 from scipy.optimize import basinhopping, fmin
@@ -30,7 +30,7 @@ class PCCAPlus(object):
         self.psi = psi
         self.pi = pi
 
-    def coarse_grain(self, model):
+    def fit(self, model):
         if self.n_states > model._T.shape[0] - 1:
             raise ValueError('''Number of states to coarse-grain must be one
                                 less than states in initial model.''')
@@ -70,7 +70,9 @@ class PCCAPlus(object):
         if self.optimize:
             A = self._optimize_A(A)
         self.A = _fill_A(A, self.psi)
+        return self
 
+    def transform(self, model):
         # Build new coarse-grained model
         new_model = deepcopy(model)
         new_model.n_states = self.n_states
@@ -87,6 +89,10 @@ class PCCAPlus(object):
         T_coarse = X_coarse / X_coarse.sum(axis=1)[:, None]
         new_model._T = T_coarse
         return new_model
+
+    def fit_transform(self, model):
+        self.fit(model)
+        return self.transform(model)
 
     def _optimize_A(self, A):
         def f(alpha):
