@@ -56,7 +56,7 @@ class ContinuousClusterMixin(object):
         labels = []
         for xi in X.values:
             labels.append(super(ContinuousClusterMixin, self).predict(xi))
-        return DiscreteSequence(labels)
+        return labels
 
     def transform(self, X, y=None):
         X = ContinuousSequence(X)

@@ -34,7 +34,6 @@ def check_sequence(X, rank=1, dtype=None):
 
 
 def check_transition_matrix(T):
-    assert T.shape[0] == T.shape[1], 'Not valid transition matrix'
     assert np.allclose(T.sum(1), 1), 'Not valid transition matrix'
 
 

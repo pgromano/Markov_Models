@@ -1,7 +1,8 @@
-from .estimation import count_matrix, transition_matrix, eigen, equilibrium
-from .utils.validation import check_sequence, check_transition_matrix
+from .utils import check_sequence, check_transition_matrix
+from .estimation import eigen, equilibrium, transition_matrix
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import ShuffleSplit
 from copy import deepcopy
 
 
@@ -39,13 +40,13 @@ class ContinuousSequence(object):
                         for i in range(self.n_sets)]), 'Number of features inconsistent'
             self.n_features = self.values[0].shape[1]
 
-    def concatenate(self, feature=None):
+    def concatenate(self, features=None):
         """ Concatenates sequences
 
         Parameters
         ----------
-        feature : int, optional
-            Feature to concatenate and return. None concatenates all features
+        features : int, optional
+            Feature to concatenate and return. None concatenates all featuress
 
         Returns
         -------
@@ -57,18 +58,18 @@ class ContinuousSequence(object):
             numpy.concatenate
         """
 
-        if (not hasattr(self, '_seqcat')) and (feature is None):
+        if (not hasattr(self, '_seqcat')) and (features is None):
             self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)])
-        if feature is None:
+        if features is None:
             return self._seqcat
-        return np.concatenate([self.values[i][:, feature] for i in range(self.n_sets)])
+        return np.concatenate([self.values[i][:, features] for i in range(self.n_sets)])
 
-    def histogram(self, feature=None, bins=10, return_extent=False):
+    def histogram(self, features=None, bins=10, return_extent=False):
         """ Create histogram of sequences
 
         Parameters
         ----------
-        feature : int, optional
+        features : int, optional
             Feature to build histogram. None build histogram along all
             features.
         bins : int or iterable of ints
@@ -85,7 +86,7 @@ class ContinuousSequence(object):
             numpy.histogramdd
         """
 
-        his, ext = np.histogramdd(self.concatenate(feature), bins=bins)
+        his, ext = np.histogramdd(self.concatenate(features), bins=bins)
         if return_extent is True:
             extent = []
             for k in range(len(ext)):
@@ -94,14 +95,14 @@ class ContinuousSequence(object):
             return his, extent
         return his
 
-    def sample(self, size=None, feature=None, replace=True):
+    def sample(self, size=None, features=None, replace=True):
         """ Uniformly sample from sequence data
 
         Parameters
         ----------
         size : int or list of ints, optional
             Size to sample from sequence
-        feature : int
+        features : int
             Features to sample along
         replace : bool
             Whether to sample with replacement
@@ -118,8 +119,53 @@ class ContinuousSequence(object):
 
         index = np.random.choice(np.arange(np.sum(self.n_samples)), size, replace)
         if len(size) > 1:
-            return self.concatenate(feature)[index.ravel()].reshape(size)
-        return self.concatenate(feature)[index]
+            return self.concatenate(features)[index.ravel()].reshape(size)
+        return self.concatenate(features)[index]
+
+    def split(self, train_size=0.75, val_size=None, random_state=None):
+        """ Split sequence into cross-validation sets
+
+        Parameters
+        ----------
+        train_size : float, optional
+            Ratio of dataset size to split as training set.
+        val_size : float, optional
+            Ratio of dataset size to split as validation set. If None then only
+            train and test sets are returned.
+        random_state : float, optional
+            Set seed for random splitting.
+
+        Returns
+        -------
+        Xtr, Xte, Xva : float, numpy.ndarray
+            The training (Xtr) and test (Xte) sets are given in the specified
+            proportions. If val_size is not None, then the validation (Xva) set
+            is also returned.
+
+        See Also
+        --------
+            sklearn.model_selection.ShuffleSplit
+        """
+        assert train_size < 1.0, "Training size must be < 1.0"
+        assert train_size > 0.0, "Training size must be > 0.0"
+        n_obs = range(np.sum(self.n_samples))
+        if val_size is None:
+            test_size = 1 - train_size
+            assert np.allclose(train_size + test_size, 1), "Total size must equal 1"
+            for train_index, test_index in ShuffleSplit(1, test_size, random_state=random_state).split(n_obs):
+                pass
+            Xcat = self.concatenate()
+            return Xcat[train_index], Xcat[test_index]
+
+        test_size = 1 - (train_size + val_size)
+        assert np.allclose(train_size + test_size + val_size, 1), "Total size must equal 1"
+
+        for train_index, test_val_index in ShuffleSplit(1, val_size + test_size).split(n_obs):
+            n = range(len(test_val_index))
+            for i, j in ShuffleSplit(1, val_size / (val_size + test_size)).split(n):
+                test_index, val_index = test_val_index[i], test_val_index[j]
+        Xcat = self.concatenate()
+        return Xcat[train_index], Xcat[test_index], Xcat[val_index]
 
 
 class DiscreteSequence(object):
@@ -220,8 +266,92 @@ class DiscreteSequence(object):
         return self._seqcat
 
 
-class BaseDiscreteModel(object):
-    """ Base Model for discrete Markov chains
+class BaseMarkovChain(object):
+    """ Base Model for discrete Markov chain
+
+    Provides basic functionality for generating chains and analysis.
+    """
+
+    def populate(self, n_iter, p=None, random_state=None):
+        """ Evolve population vector
+
+        Parameters
+        ----------
+        n_iter : int
+            The number of iterations to evolve a starting population vector.
+        p : array-like iterable, shape=(n_states,), default=None
+            A population vector that is evolved by the transition matrix.
+            Vector must sum to 1 and have the same number of states as the
+            transtition matrix.
+        random_state : int, default=None
+            Sets the seed for the random generation of the starting population
+            vector.
+
+        Returns
+        -------
+        p_n : numpy.ndarray, shape=(n_states, )
+            The final population after propagating over n_iter.
+        """
+
+        n_states = self._T.shape[1]
+        if p is None:
+            np.random.seed(random_state)
+            p = np.eye(n_states)[np.random.randint(0, n_states)]
+        else:
+            assert np.shape(p)[0] == n_states, "Number of states do not match"
+            assert np.allclose(np.sum(p), 1), "Not a valid population vector"
+
+        if self.n_order == 1:
+            return np.matmul(p, np.linalg.matrix_power(self._T, n_iter))
+        else:
+            return [np.matmul(p, np.linalg.matrix_power(tmat, n_iter)) for tmat in np.split(self._T, self.n_states)]
+
+    def simulate(self, n_samples=None, n0=None, random_state=None):
+        """ Generate Markov chain from transition matrix
+
+        Parameters
+        ----------
+        n_samples : int or iterable of int
+            The number of samples to sample from equilibrium distribution. If
+            provided list of integers, list of samples is returned with the
+            same shape provided
+        n0 : int
+            The initial state for **all** simulations to start. If None, then
+            initial states are generated at random.
+        random_state : int, optional, default: None
+            Set seed for random number generator.
+
+        Returns
+        -------
+        simulations : list of ints
+            Markov chain generated from transition matrix.
+        """
+
+        if self.n_order == 1:
+            obs = equilibrium.simulate(self._T, n_samples, n0, random_state)
+            return self._to_labels(obs)
+        raise ValueError('Nth order Markov chains not currently supported')
+
+    @property
+    def transition_matrix(self):
+        """ Transition matrix of the Markov chain """
+
+        if hasattr(self, '_T'):
+            return self._T
+        else:
+            self._update_transition_matrix
+
+    @property
+    def _update_transition_matrix(self):
+        if hasattr(self, '_C'):
+            self._T = transition_matrix(self._C, self._method,
+                                        tol=self.tol, max_iter=self.max_iter)
+            check_transition_matrix(self._T)
+        else:
+            raise ValueError("""No count matrix found""")
+
+class BaseMarkovStateModel(object):
+    """ Base Model for reversible Markov State Models
 
     Provides basic functionality for generating chains, kinetics, and spectral
     analysis.
@@ -310,6 +440,17 @@ class BaseDiscreteModel(object):
 
         if hasattr(self, '_T'):
             return self._T
+        else:
+            self._update_transition_matrix
+
+    @property
+    def _update_transition_matrix(self):
+        if hasattr(self, '_C'):
+            self._T = transition_matrix(self._C, self._method,
+                                        tol=self.tol, max_iter=self.max_iter)
+            check_transition_matrix(self._T)
+        else:
+            raise ValueError("""No count matrix found""")
 
     @property
     def metastability(self):
@@ -322,6 +463,8 @@ class BaseDiscreteModel(object):
         """ Returns the equilibrium (stationary) distribution """
 
         if not hasattr(self , '_pi'):
+            self._pi = equilibrium.distribution(self._T, sparse=self._is_sparse)
+        if not len(self._pi) == self.n_states:
             self._pi = equilibrium.distribution(self._T, sparse=self._is_sparse)
         return self._pi
 
@@ -458,238 +601,3 @@ class BaseDiscreteModel(object):
         """
 
         return equilibrium.timescales(self, k=k, **kwargs)
-
-
-class DiscreteModel(BaseDiscreteModel):
-    """ Discrete model for Markov chains
-
-    Parameters
-    ----------
-    T : float, array-like, shape=(N, N)
-        Row stochastic transition matrix
-    lag : int
-        Number of timesteps which define length of lag-time between
-        transitions.
-    sparse : bool
-        Whether or not sparse linear algebra methods should be used to
-        compute spectral properties.
-
-    Attributes
-    ----------
-    n_states : int
-        Number of discrete states (or nodes) within the chain.
-    """
-
-    def __init__(self, T, **kwargs):
-        self._is_sparse = kwargs.get('sparse', False)
-        self.lag = kwargs.get('lag', 1)
-        self._T = T
-        self.n_states = self._T.shape[0]
-        self.labels_ = kwargs.get('labels', None)
-        if self.labels_ is None:
-            self.labels_ = np.arange(self.n_states)
-        else:
-            assert len(self.labels_) == self._T.shape[0], "T matrix does not match labels"
-
-        encoder = LabelEncoder().fit(self.labels_)
-        self._from_labels = encoder.transform
-        self._to_labels = encoder.inverse_transform
-
-
-    def score(self, objective=None):
-        """ Score the Markov model
-
-        Parameters
-        ----------
-        objective : {'CM', 'PR', 'GMRQ'}
-            Method by which to calculates a score for the Markov chain.
-
-        Returns
-        -------
-        score : float
-            Score calculated by chosen objective.
-
-        Notes
-        -----
-        The crisp metastability (CM) metric, given by the sum along the
-        transition matrix, :math:`tr(T)`, scores the model by how metastable
-        the sum of all state are.
-
-        The persistence ratio (PR), given by the :math:`tr(T)/n`, is the ratio
-        of the crisp metastability over the number of states in the chain. It
-        gives the likelihood that a Markov process remain in a state, as
-        opposed to transitioning.
-
-        The generalized matrix Rayleigh quotient (GMRQ) is approximated as the
-        sum of the eigenvalues of the transition matrix. [1]
-
-        References
-        ----------
-        [1] McGibbon, R. T. and V. S. Pande, JCP 142, 124105 (2015),
-            “Variational cross-validation of slow dynamical modes in molecular
-            kinetics”
-
-        See Also
-        --------
-            Markov_Models.base.DiscreteEstimator
-        """
-
-        if objective is None:
-            return np.trace(self._T)
-        elif objective.lower() == 'cm':
-            return np.trace(self._T)
-        elif objective.lower() == 'pr':
-            return np.trace(self._T) / self._T.shape[0]
-        elif objective.lower() == 'gmrq':
-            return np.sum(self.eigenvalues())
-        else:
-            raise ValueError('Objective {:s} not implemented'.format(objective))
-
-
-class DiscreteEstimator(BaseDiscreteModel):
-    """ Estimator for discrete Markov chains
-
-    Parameters
-    ----------
-    T : float, array-like, shape=(N, N)
-        Row stochastic transition matrix
-    lag : int
-        Number of timesteps which define length of lag-time between
-        transitions.
-    method : {'Prinz', 'Symmetric', 'Naive'}
-        Method for estimating the transition matrix from sampled datasets.
-    sparse : bool
-        Whether or not sparse linear algebra methods should be used to
-        compute spectral properties.
-
-    Attributes
-    ----------
-    n_states : int
-        Number of discrete states (or nodes) within the chain.
-
-    Notes
-    -----
-    Naive estimation of the transition matrix, simply row normalizes the
-    observed counts from all states i to j over lag time :math:`\tau` according
-    to :math:`\frac{C_{ij}(\tau)}{\sum_{j=1}^{N} C_{ij}}`. This method does
-    **not** necessarily enforce detailed-balance, a requirement to Markov
-    statistics.
-
-    Symmetric estimation enforces detailed-balance by averaging the forward
-    and backward transitions such that
-    :math:`\bar{C}_{ij} = \bar{C}_{ji} = \frac{C_{ij} + C_{ji}}{2}`. It is not
-    guaranteed that simulations whose underlying distribution obeys Markov
-    statistics will exhibit a symmetric count transitions under the limit of
-    ergodic sampling. The symmetrized count matrix (:math:`\bar{C}`) is row
-    normalized identically to the Naive estimator. [1]
-
-    The Prinz method employs a maximum likelihood estimation scheme detailed in
-    their JCP [2] paper, which gives an excellent review of standard methods to
-    estimate transition matrices from noisey time-series data.
-
-    References
-    ----------
-    [1] Bowman G.R. (2014) "An Overview and Practical Guide to Building Markov
-        State Models."
-    [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics:
-        Generation and validation."
-    """
-
-    def __init__(self, **kwargs):
-        self._method = kwargs.get('method', 'prinz')
-        self._is_sparse = kwargs.get('sparse', False)
-        self.lag = kwargs.get('lag', 1)
-        self.tol = kwargs.get('tol', 1e-4)
-        self.max_iter = kwargs.get('max_iter', 1000)
-
-    def fit(self, X):
-        """ Fit Markov chain from sequence
-
-        Parameters
-        ----------
-        X : DiscreteSequence or array-like, shape=(n_sets, n_samples,)
-            A sequence of discrete sequences.
-
-        Returns
-        -------
-        self
-        """
-
-        # Convert to DiscreteSequence class
-        X = DiscreteSequence(X)
-
-        # Set label encoder
-        self._from_labels = X.transform
-        self._to_labels = X.inverse_transform
-        self.labels_ = X.labels_
-
-        # Calculate Count and Transition Matrix
-        self._C = count_matrix(X, self.lag, self._is_sparse)
-        self._T = transition_matrix(self._C, self._method,
-                                    tol=self.tol, max_iter=self.max_iter)
-
-        # Validate Transition Matrix
-        check_transition_matrix(self._T)
-        self.n_states = self._T.shape[0]
-        return self
-
-    def score(self, X=None, objective=None, **kwargs):
-        """ Score the Markov model
-
-        Parameters
-        ----------
-        X : DiscreteSequence or array-like, shape=(n_sets, n_samples,)
-            A sequence of discrete sequences. If given, the objective estimates a
-            discrete Markov chain and scores the model accordingly. Otherwise,
-            the score is based on the given model.
-        objective : {'CM', 'PR', 'GMRQ'}
-            Method by which to calculates a score for the Markov chain.
-        **kwargs
-            Key-word arguments to select conditions for estimating Markov
-            chain.
-
-        Returns
-        -------
-        score : float
-            Score calculated by chosen objective.
-
-        Notes
-        -----
-        The crisp metastability (CM) metric, given by the sum along the
-        transition matrix, :math:`tr(T)`, scores the model by how metastable
-        the sum of all state are.
-
-        The persistence ratio (PR), given by the :math:`tr(T)/n`, is the ratio
-        of the crisp metastability over the number of states in the chain. It
-        gives the likelihood that a Markov process remain in a state, as
-        opposed to transitioning.
-
-        The generalized matrix Rayleigh quotient (GMRQ) is approximated as the
-        sum of the eigenvalues of the transition matrix. [1]
-
-        References
-        ----------
-        [1] McGibbon, R. T. and V. S. Pande, JCP 142, 124105 (2015),
-            “Variational cross-validation of slow dynamical modes in molecular
-            kinetics”
-
-        See Also
-        --------
-            Markov_Models.base.DiscreteEstimator
-        """
-
-        if X is None:
-            new_model = deepcopy(self)
-        else:
-            new_model = deepcopy(self.__class__(**kwargs).fit(X))
-
-        if objective is None:
-            return np.trace(self._T)
-        elif objective.lower() == 'cm':
-            return np.trace(self._T)
-        elif objective.lower() == 'pr':
-            return np.trace(self._T) / self._T.shape[0]
-        elif objective.lower() == 'gmrq':
-            return np.sum(self.eigenvalues())
-        else:
-            raise ValueError('Objective {:s} not implemented'.format(objective))
