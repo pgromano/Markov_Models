@@ -40,7 +40,6 @@ class MarkovChain(base.BaseMarkovChain):
 
     def __init__(self, T=None, lag=1, n_order=1, labels=None,
                  method='Naive', tol=1e-4, max_iter=1000):
-        self._T = T
         self.lag = lag
         self.n_order = n_order
         self.labels_ = labels
@@ -50,6 +49,8 @@ class MarkovChain(base.BaseMarkovChain):
 
         # Evaluate states and order of Markov chain
         if T is not None:
+            self._T = T
+
             # Determine order of chain
             self.n_states = T.shape[1]
             if T.shape[0] == T.shape[1]:
@@ -167,10 +168,10 @@ class MarkovStateModel(base.BaseMarkovStateModel):
         self.lag = lag
         self.tol = tol
         self.max_iter = max_iter
-        self._T = T
         self.labels_ = labels
 
-        if self._T is not None:
+        if T is not None:
+            self._T = T
             self.n_states = T.shape[1]
             assert T.shape[0] == T.shape[1], "MSM must be first order Markov chain"
 
@@ -220,7 +221,7 @@ class MarkovStateModel(base.BaseMarkovStateModel):
             A sequence of discrete sequences. If given, the objective estimates a
             Markov state model and scores the model accordingly. Otherwise, the
             score is based on the given model.
-        objective : {'CM', 'PR', 'GMRQ'}
+        objective : {'crisp', 'crisp_norm', 'GMRQ'}
             Method by which to calculates a score for the Markov state model.
         **kwargs
             Key-word arguments to select conditions for estimating Markov state
@@ -233,11 +234,11 @@ class MarkovStateModel(base.BaseMarkovStateModel):
 
         Notes
         -----
-        The crisp metastability (CM) metric, given by the sum along the
+        The crisp metastability (crisp) metric, given by the sum along the
         transition matrix, :math:`tr(T)`, scores the model by how metastable
         the sum of all state are.
 
-        The persistence ratio (PR), given by the :math:`tr(T)/n`, is the ratio
+        The persistence ratio (crisp_norm), given by the :math:`tr(T)/n`, is the ratio
         of the crisp metastability over the number of states in the chain. It
         gives the likelihood that a Markov process remain in a state, as
         opposed to transitioning.
@@ -263,9 +264,9 @@ class MarkovStateModel(base.BaseMarkovStateModel):
 
         if objective is None:
             return np.trace(new_model._T)
-        elif objective.lower() == 'cm':
+        elif objective.lower() == 'crisp':
             return np.trace(new_model._T)
-        elif objective.lower() == 'pr':
+        elif objective.lower() == 'crisp_norm':
             return np.trace(new_model._T) / new_model._T.shape[1]
         elif objective.lower() == 'gmrq':
             return np.sum(new_model.eigenvalues())
