@@ -5,6 +5,10 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import ShuffleSplit
 from copy import deepcopy
 
+__all__ = ['ContinuousSequence',
+           'DiscreteSequence',
+           'BaseMarkovChain',
+           'BaseMarkovStateModel']
 
 class ContinuousSequence(object):
     """ Continuous sequence class to establish standard data format
@@ -188,20 +192,43 @@ class DiscreteSequence(object):
         List of number of samples/observations in each set.
     """
 
-    def __init__(self, X):
+    def __init__(self, X, n_states=None):
         if isinstance(X, DiscreteSequence):
             self.__dict__ = X.__dict__
         else:
             self.values = check_sequence(X, rank=1)
+            self.n_sets = len(self.values)
+            self.n_samples = [val.shape[0] for val in self.values]
+
+            # Set label encoder
             encoder = LabelEncoder().fit(np.concatenate(self.values))
             self._values = [encoder.transform(val) for val in self.values]
             self.labels_ = encoder.classes_
-
-            self.n_sets = len(self._values)
-            self.n_samples = [val.shape[0] for val in self._values]
-            self.n_states = np.amax([np.amax(val) for val in self._values]) + 1
             self.transform = encoder.transform
             self.inverse_transform = encoder.inverse_transform
+
+            # Evaluate number of states
+            if n_states is None:
+                self.n_states = np.amax([np.amax(val) for val in self._values]) + 1
+            else:
+                self.n_states = n_states
+
+    def concatenate(self):
+        """ Concatenates sequences
+
+        Returns
+        -------
+        seqcat : list of numpy.ndarray
+            List of sequences concatenated
+
+        See Also
+        --------
+            numpy.concatenate
+        """
+
+        if not hasattr(self, '_seqcat'):
+            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)], 0)
+        return self._seqcat
 
     def counts(self, return_labels=True):
         """ Count the number of unique elements
@@ -226,6 +253,13 @@ class DiscreteSequence(object):
 
         return np.unique(self.values, return_counts=return_labels)
 
+    def one_hot(self):
+        y_hot = []
+        for i in range(self.n_sets):
+            y_hot.append(np.zeros((self.n_samples[i], self.n_states)))
+            y_hot[i][range(self.n_samples[i]), self._values[i]] = 1
+        return y_hot
+
     def sample(self, size=None, replace=True):
         """ Uniformly sample from sequence data
 
@@ -247,23 +281,6 @@ class DiscreteSequence(object):
         """
 
         return np.random.choice(self.concatenate(), size, replace)
-
-    def concatenate(self):
-        """ Concatenates sequences
-
-        Returns
-        -------
-        seqcat : list of numpy.ndarray
-            List of sequences concatenated
-
-        See Also
-        --------
-            numpy.concatenate
-        """
-
-        if not hasattr(self, '_seqcat'):
-            self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)], 0)
-        return self._seqcat
 
 
 class BaseMarkovChain(object):
