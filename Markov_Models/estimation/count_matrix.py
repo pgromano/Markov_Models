@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import coo_matrix
 
+__all__ = ['count_matrix']
 
 def _count(X, lag, n_states, sparse):
     i = X[:-lag]

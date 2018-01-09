@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from copy import deepcopy
 
+__all__ = ['MarkovChain', 'MarkovStateModel']
+
 class MarkovChain(base.BaseMarkovChain):
     """ Estimator for Discrete Markov Chains
 

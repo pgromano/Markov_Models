@@ -3,7 +3,10 @@ import numpy as np
 from sklearn.preprocessing import normalize
 
 
-def transition_matrix(C, method, **kwargs):
+__all__ = ['transition_matrix']
+
+
+def transition_matrix(C, method='Naive', **kwargs):
     """ Helper function to run transition matrix calculation by method """
 
     if method.lower() == 'prinz':

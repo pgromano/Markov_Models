@@ -2,6 +2,7 @@ import numpy as np
 from scipy.linalg import eig
 from scipy.sparse.linalg import eigs
 
+__all__ = ['values', 'vectors']
 
 def values(T, sparse, k=None, ncv=None):
     """Compute eigenvalues of transition matrix.

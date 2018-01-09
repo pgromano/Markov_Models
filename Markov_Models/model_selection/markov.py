@@ -3,6 +3,9 @@ from ..estimation import count_matrix, transition_matrix, eigen
 import numpy as np
 
 
+__all__ = ['relaxation_time']
+
+
 def aic(T):
     return 2 * T.shape[0] - 2 * np.log(np.product(T.ravel()))
 

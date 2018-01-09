@@ -4,6 +4,9 @@ from scipy.linalg import eig, solve
 from scipy.sparse.linalg import eigs
 
 
+__all__ = ['distribution', 'mfpt', 'sample', 'simulate', 'timescales']
+
+
 def distribution(T, ncv=None, sparse=False):
     if sparse is True:
         w, L = eigs(T.T, k=1, ncv=ncv, which='LR')
