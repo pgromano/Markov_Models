@@ -1,6 +1,12 @@
 import numpy as np
 
 
+__all__ = ['check_irreducible',
+           'check_sequence',
+           'check_transition_matrix', 
+           'check_equilibrium']
+
+
 def check_irreducible(X):
     if not len(np.arange(X.n_states)) == len(X.counts()[0]):
         raise ValueError('Sequence does not sample all states.')
