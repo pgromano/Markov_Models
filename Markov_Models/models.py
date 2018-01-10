@@ -94,9 +94,11 @@ class MarkovChain(base.BaseMarkovChain):
         self.n_states = len(self.labels_)
 
         # Calculate Count and Transition Matrix
-        self._C = count_matrix(X, self.lag, self._is_sparse)
-        self._update_transition_matrix
-        return self
+        if n_order == 1:
+            self._C = count_matrix(X, self.lag, self._is_sparse)
+            self._update_transition_matrix
+            return self
+        print("n_order > 1 not currently supported")
 
 
 class MarkovStateModel(base.BaseMarkovStateModel):
