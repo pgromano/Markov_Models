@@ -320,8 +320,7 @@ class BaseMarkovChain(object):
 
         if self.n_order == 1:
             return np.matmul(p, np.linalg.matrix_power(self._T, n_iter))
-        else:
-            return [np.matmul(p, np.linalg.matrix_power(tmat, n_iter)) for tmat in np.split(self._T, self.n_states)]
+        print("n_order > 1 not currently supported")
 
     def simulate(self, n_samples=None, n0=None, random_state=None):
         """ Generate Markov chain from transition matrix
@@ -347,7 +346,7 @@ class BaseMarkovChain(object):
         if self.n_order == 1:
             obs = equilibrium.simulate(self._T, n_samples, n0, random_state)
             return self._to_labels(obs)
-        raise ValueError('Nth order Markov chains not currently supported')
+        print("n_order > 1 not currently supported")
 
     @property
     def transition_matrix(self):
