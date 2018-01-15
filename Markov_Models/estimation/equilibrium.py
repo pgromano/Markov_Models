@@ -1,4 +1,3 @@
-from . import _simulate
 import numpy as np
 from scipy.linalg import eig, solve
 from scipy.sparse.linalg import eigs
@@ -48,25 +47,6 @@ def mfpt(T, origin, target=None, sparse=False):
 def sample(pi, n_samples, random_state):
     np.random.seed(random_state)
     return np.random.choice(np.arange(len(pi)), p=pi, size=n_samples)
-
-
-def simulate(T, n_samples, n0, random_state):
-    if n_samples is None:
-        n_samples = 1
-
-    if isinstance(n_samples, int):
-        return np.asarray(_simulate.simulate(T, n_samples,
-                                             n0, 1, random_state))
-    else:
-        if len(n_samples) == 1:
-            X = np.asarray(_simulate.simulate(
-                           T, np.int(np.product(n_samples)),
-                           n0, 1, random_state))
-        else:
-            X = np.asarray(_simulate.simulate(
-                           T, np.int(np.product(n_samples)),
-                           n0, n_samples[0], random_state))
-    return X.reshape(n_samples)
 
 
 def timescales(self, **kwargs):
