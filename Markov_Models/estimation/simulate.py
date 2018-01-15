@@ -24,18 +24,18 @@ def from_dict(T, n_samples, n_order, n0, random_state):
 
     # Set seed and initialize array
     np.random.seed(random_state)
-    X = np.empty(n_samples, dtype=dtype)
+    X = []
 
     # Initialize simulation
     if n0 is None:
         n_init = len(T.keys())
         n0 = list(T.keys())[np.random.choice(range(n_init))]
-    X[:n_order] = n0
+    X.extend(n0)
 
     # Simulate
     for n in range(n_order, n_samples):
         prev_step = tuple(X[n - n_order:n])
         keys = list(T[prev_step].keys())
         vals = list(T[prev_step].values())
-        X[n] = np.random.choice(keys, size=1, p=vals)[0]
+        X.append(np.random.choice(keys, size=1, p=vals)[0])
     return X
