@@ -108,11 +108,6 @@ def vectors(T, method, sparse, k=None, ncv=False):
     # Normalize the Stationary Distribution
     L[:, 0] = L[:, 0] / np.sum(L[:, 0])
 
-    # Standard normalization L'R=Id
-    # norm = np.diag(np.dot(np.transpose(L), R))
-    # L[:, 1:] = L[:, 1:] / norm[1:]
-    # R = R / norm
-
     for i in range(1, L.shape[1]):
         L[:, i] = L[:, i] / np.sqrt(np.dot(L[:, i], L[:, i] / L[:, 0]))
 
