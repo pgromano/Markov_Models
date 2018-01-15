@@ -11,28 +11,21 @@ class MarkovChain(base.BaseMarkovChain):
 
     Parameters
     ----------
-    T : float, array-like, shape=(N, N), optional
-        Row stochastic transition matrix. If not provided, the method must be
-        fit from sequence data.
+    T : float, nested dict, option
+        Row stochastic transition matrix. Outer dictionary must contain tuples
+        of length n_order. Notice if this is not passed, n_order is set as the
+        length of the first key. Inner dictionary must define transition
+        probabilities from initial sequence of length n_order. If transition
+        matrix not provided, the method must be fit from sequence data.
+    n_order : int, option
+        The order of the Markov chain
     lag : int, optional
         Number of timesteps which define length of lag-time between
         transitions.
-    labels : array-like, optional
-        List of values to label the states within the Markov chain.
-    tol : float, optional
-        The tolerance threshold for MLE fitting of transition matrix.
-    max_iter : int, optional
-        The maximum number of threshold for MLE fitting of transition matrix.
-
-    Attributes
-    ----------
-    n_states : int
-        Number of discrete states (or nodes) within the chain.
 
     See Also
     --------
         numpy.random.choice
-        sklearn.preprocessing.LabelEncoder
         Markov_Models.models.MarkovStateModels
     """
 
