@@ -1,5 +1,5 @@
 from . import base
-from .estimation import count_matrix
+from .estimation import count_matrix, count_vectorizer
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from copy import deepcopy
@@ -17,12 +17,8 @@ class MarkovChain(base.BaseMarkovChain):
     lag : int, optional
         Number of timesteps which define length of lag-time between
         transitions.
-    n_order : int, optional
-        Order of the Markov chain.
     labels : array-like, optional
         List of values to label the states within the Markov chain.
-    method : {'Prinz', 'Symmetric', 'Naive'}, optional
-        Method for estimating the transition matrix from sampled datasets.
     tol : float, optional
         The tolerance threshold for MLE fitting of transition matrix.
     max_iter : int, optional
@@ -40,36 +36,14 @@ class MarkovChain(base.BaseMarkovChain):
         Markov_Models.models.MarkovStateModels
     """
 
-    def __init__(self, T=None, lag=1, n_order=1, labels=None,
-                 method='Naive', tol=1e-4, max_iter=1000):
-        self.lag = lag
-        self.n_order = n_order
-        self.labels_ = labels
-        self._method = method
-        self.tol = tol
-        self.max_iter = max_iter
-
-        # Evaluate states and order of Markov chain
+    def __init__(self, T=None, n_order=1, lag=1):
         if T is not None:
             self._T = T
-
-            # Determine order of chain
-            self.n_states = T.shape[1]
-            if T.shape[0] == T.shape[1]:
-                self.n_order = 1
-            else:
-                self.n_order = np.log(T.shape[0]) / np.log(T.shape[1])
-
-            # Check state/node labels
-            if self.labels_ is None:
-                self.labels_ = np.arange(self.n_states)
-            else:
-                assert len(self.labels_) == self._T.shape[1], "T matrix does not match labels"
-
-            # Encoder used to convert sequences to/from labels/numeric values
-            encoder = LabelEncoder().fit(self.labels_)
-            self._from_labels = encoder.transform
-            self._to_labels = encoder.inverse_transform
+            self.n_order = len(list(T.keys())[0])
+        else:
+            self.n_order = n_order
+        self.lag = lag
+        self._method = "Dictionary"
 
     def fit(self, X):
         """ Fit Markov chain from sequence
@@ -87,21 +61,13 @@ class MarkovChain(base.BaseMarkovChain):
         # Convert to DiscreteSequence class
         X = base.DiscreteSequence(X)
 
-        # Set label encoder
-        self._from_labels = X.transform
-        self._to_labels = X.inverse_transform
-        self.labels_ = X.labels_
-        self.n_states = len(self.labels_)
-
         # Calculate Count and Transition Matrix
-        if n_order == 1:
-            self._C = count_matrix(X, self.lag, self._is_sparse)
-            self._update_transition_matrix
-            return self
-        print("n_order > 1 not currently supported")
+        self._C = count_vectorizer(X, self.n_order, self.lag)
+        self._update_transition_matrix
+        return self
 
 
-class MarkovStateModel(base.BaseMarkovStateModel):
+class MarkovStateModel(base.BaseReversibleMarkovStateModel):
     """ Estimator for Markov State Models
 
     Parameters
@@ -173,19 +139,19 @@ class MarkovStateModel(base.BaseMarkovStateModel):
         self.tol = tol
         self.max_iter = max_iter
         self.labels_ = labels
+        self._encode = False
 
         if T is not None:
             self._T = T
             self.n_states = T.shape[1]
             assert T.shape[0] == T.shape[1], "MSM must be first order Markov chain"
 
-            # Check Labels
-            if self.labels_ is None:
-                self.labels_ = np.arange(self.n_states)
-            else:
-                assert len(self.labels_) == self._T.shape[0], "T matrix does not match labels"
-
+        # Check Labels
+        if self.labels_ is not None:
+            if T is not None:
+                assert len(self.labels_) == T.shape[0], "T matrix does not match labels"
             encoder = LabelEncoder().fit(self.labels_)
+            self._encode = True
             self._from_labels = encoder.transform
             self._to_labels = encoder.inverse_transform
 
@@ -203,16 +169,14 @@ class MarkovStateModel(base.BaseMarkovStateModel):
         """
 
         # Convert to DiscreteSequence class
-        X = base.DiscreteSequence(X)
-
-        # Set label encoder
-        self._from_labels = X.transform
-        self._to_labels = X.inverse_transform
-        self.labels_ = X.labels_
-        self.n_states = len(self.labels_)
+        if self._encode:
+            X = base.DiscreteSequence(X, encoder=self._from_labels)
+        else:
+            X = base.DiscreteSequence(X)
 
         # Calculate Count and Transition Matrix
         self._C = count_matrix(X, self.lag, self._is_sparse)
+        self.n_states = self._C.shape[1]
         self._update_transition_matrix
         return self
 

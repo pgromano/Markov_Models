@@ -1,14 +1,15 @@
 from .utils import check_sequence, check_transition_matrix
-from .estimation import eigen, equilibrium, transition_matrix
+from .estimation import eigen, equilibrium, simulate, transition_matrix
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import ShuffleSplit
 from copy import deepcopy
+
 
 __all__ = ['ContinuousSequence',
            'DiscreteSequence',
            'BaseMarkovChain',
-           'BaseMarkovStateModel']
+           'BaseReversibleMarkovStateModel']
+
 
 class ContinuousSequence(object):
     """ Continuous sequence class to establish standard data format
@@ -192,26 +193,22 @@ class DiscreteSequence(object):
         List of number of samples/observations in each set.
     """
 
-    def __init__(self, X, n_states=None):
+    def __init__(self, X, n_states=None, labels=None, dtype=None, encoder=None):
         if isinstance(X, DiscreteSequence):
             self.__dict__ = X.__dict__
         else:
-            self.values = check_sequence(X, rank=1)
+            # Check n_states and labels
+            if (labels is not None) and (n_states is not None) and (n_states > 0):
+                if len(labels) != n_states:
+                    raise ValueError("""Length of provided labels must equal
+                    n_states.""")
+
+            self.values = check_sequence(X, rank=1, dtype=dtype)
+            if encoder is not None:
+                self.values = [encoder(val) for val in self.values]
+
             self.n_sets = len(self.values)
             self.n_samples = [val.shape[0] for val in self.values]
-
-            # Set label encoder
-            encoder = LabelEncoder().fit(np.concatenate(self.values))
-            self._values = [encoder.transform(val) for val in self.values]
-            self.labels_ = encoder.classes_
-            self.transform = encoder.transform
-            self.inverse_transform = encoder.inverse_transform
-
-            # Evaluate number of states
-            if n_states is None:
-                self.n_states = np.amax([np.amax(val) for val in self._values]) + 1
-            else:
-                self.n_states = n_states
 
     def concatenate(self):
         """ Concatenates sequences
@@ -257,7 +254,7 @@ class DiscreteSequence(object):
         y_hot = []
         for i in range(self.n_sets):
             y_hot.append(np.zeros((self.n_samples[i], self.n_states)))
-            y_hot[i][range(self.n_samples[i]), self._values[i]] = 1
+            y_hot[i][range(self.n_samples[i]), self.values[i]] = 1
         return y_hot
 
     def sample(self, size=None, replace=True):
@@ -289,38 +286,27 @@ class BaseMarkovChain(object):
     Provides basic functionality for generating chains and analysis.
     """
 
-    def populate(self, n_iter, p=None, random_state=None):
-        """ Evolve population vector
+    # TODO: Solve equilibrium distribution from dictionary transition matrix
+    #def sample(self, n_samples=None, random_state=None):
+    #    """ Sample from equilibrium distribution
 
-        Parameters
-        ----------
-        n_iter : int
-            The number of iterations to evolve a starting population vector.
-        p : array-like iterable, shape=(n_states,), default=None
-            A population vector that is evolved by the transition matrix.
-            Vector must sum to 1 and have the same number of states as the
-            transtition matrix.
-        random_state : int, default=None
-            Sets the seed for the random generation of the starting population
-            vector.
+    #    Parameters
+    #    ----------
+    #    n_samples : int or iterable of int
+    #        The number of samples to sample from equilibrium distribution. If
+    #        provided list of integers, list of samples is returned with the
+    #        same shape provided
+    #    random_state : int, optional, default: None
+    #        Set seed for random number generator.
 
-        Returns
-        -------
-        p_n : numpy.ndarray, shape=(n_states, )
-            The final population after propagating over n_iter.
-        """
+    #    Returns
+    #    -------
+    #    samples : list of ints
+    #        List of states sampled from equilibrium distribution.
+    #    """
 
-        n_states = self._T.shape[1]
-        if p is None:
-            np.random.seed(random_state)
-            p = np.eye(n_states)[np.random.randint(0, n_states)]
-        else:
-            assert np.shape(p)[0] == n_states, "Number of states do not match"
-            assert np.allclose(np.sum(p), 1), "Not a valid population vector"
-
-        if self.n_order == 1:
-            return np.matmul(p, np.linalg.matrix_power(self._T, n_iter))
-        print("n_order > 1 not currently supported")
+    #    obs = equilibrium.sample(self.equilibrium, n_samples, random_state)
+    #    return self._to_labels(obs)
 
     def simulate(self, n_samples=None, n0=None, random_state=None):
         """ Generate Markov chain from transition matrix
@@ -343,10 +329,8 @@ class BaseMarkovChain(object):
             Markov chain generated from transition matrix.
         """
 
-        if self.n_order == 1:
-            obs = equilibrium.simulate(self._T, n_samples, n0, random_state)
-            return self._to_labels(obs)
-        print("n_order > 1 not currently supported")
+        return simulate.from_dict(self._T, n_samples, self.n_order, n0, random_state)
+
 
     @property
     def transition_matrix(self):
@@ -360,13 +344,12 @@ class BaseMarkovChain(object):
     @property
     def _update_transition_matrix(self):
         if hasattr(self, '_C'):
-            self._T = transition_matrix(self._C, self._method,
-                                        tol=self.tol, max_iter=self.max_iter)
-            check_transition_matrix(self._T)
+            self._T = transition_matrix(self._C, self._method)
         else:
             raise ValueError("""No count matrix found""")
 
-class BaseMarkovStateModel(object):
+
+class BaseReversibleMarkovStateModel(object):
     """ Base Model for reversible Markov State Models
 
     Provides basic functionality for generating chains, kinetics, and spectral
@@ -423,7 +406,9 @@ class BaseMarkovStateModel(object):
         """
 
         obs = equilibrium.sample(self.equilibrium, n_samples, random_state)
-        return self._to_labels(obs)
+        if self._encode:
+            return self._to_labels(obs)
+        return obs
 
     def simulate(self, n_samples=None, n0=None, random_state=None):
         """ Generate Markov chain from transition matrix
@@ -446,8 +431,10 @@ class BaseMarkovStateModel(object):
             Markov chain generated from transition matrix.
         """
 
-        obs = equilibrium.simulate(self._T, n_samples, n0, random_state)
-        return self._to_labels(obs)
+        obs = simulate.from_matrix(self._T, n_samples, n0, random_state)
+        if self._encode:
+            return self._to_labels(obs)
+        return obs
 
 
     @property

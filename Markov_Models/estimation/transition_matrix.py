@@ -15,6 +15,11 @@ def transition_matrix(C, method='Naive', **kwargs):
         return symmetric(C)
     elif method.lower() == 'naive':
         return naive(C)
+    elif method.lower() == 'dictionary':
+        return dictionary(C)
+    else:
+        raise ValueError("""Normalization method {:s} is not currently
+        implemented""".format(method))
 
 
 def naive(C):
@@ -66,3 +71,14 @@ def prinz(C, tol=1e-4, max_iter=1000):
     [2] Prinz et al, JCP 134.17 (2011) "Markov models of molecular kinetics: Generation and validation."
     """
     return np.asarray(_mle_tmat_prinz.transition_matrix(C, tol, max_iter))
+
+def dictionary(C):
+    T = {}
+    for row_key, row_val in C.items():
+        T[row_key] = {}
+        weight = 0
+        for col_key, col_val in row_val.items():
+            weight += col_val
+        for col_key, col_val in row_val.items():
+            T[row_key][col_key] = C[row_key][col_key] / weight
+    return T
