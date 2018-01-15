@@ -3,7 +3,7 @@ import numpy as np
 
 __all__ = ['check_irreducible',
            'check_sequence',
-           'check_transition_matrix', 
+           'check_transition_matrix',
            'check_equilibrium']
 
 
@@ -31,12 +31,12 @@ def check_sequence(X, rank=1, dtype=None):
         assert np.ndim(X[0]) == rank, "Sequence must be rank {:d}".format(rank)
         if dtype is not None:
             return [np.array(xi, dtype=dtype) for xi in X]
-        return [np.array(xi) for xi in X]
+        return [np.array(xi, dtype=dtype) for xi in X]
     else:
         assert np.ndim(X) == rank, "Sequence must be rank {:d}".format(rank)
         if dtype is not None:
             return [np.array(X, dtype=dtype)]
-        return [np.array(X)]
+        return [np.array(X, dtype=dtype)]
 
 
 def check_transition_matrix(T):
