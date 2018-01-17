@@ -188,7 +188,7 @@ class DiscreteSequence(object):
         List of number of samples/observations in each set.
     """
 
-    def __init__(self, X, n_states=None, labels=None, dtype=None, encoder=None):
+    def __init__(self, X, labels=None, dtype=None, encoder=None):
         if isinstance(X, DiscreteSequence):
             self.__dict__ = X.__dict__
         else:
@@ -222,7 +222,7 @@ class DiscreteSequence(object):
             self._seqcat = np.concatenate([self.values[i] for i in range(self.n_sets)], 0)
         return self._seqcat
 
-    def counts(self, return_labels=True):
+    def counts(self, return_labels=False):
         """ Count the number of unique elements
 
         Parameters
@@ -245,10 +245,13 @@ class DiscreteSequence(object):
 
         return np.unique(self.values, return_counts=return_labels)
 
-    def one_hot(self):
+    def one_hot(self, n_states=None):
+        if n_states is None:
+            n_states = len(self.counts())
+
         y_hot = []
         for i in range(self.n_sets):
-            y_hot.append(np.zeros((self.n_samples[i], self.n_states)))
+            y_hot.append(np.zeros((self.n_samples[i], n_states)))
             y_hot[i][range(self.n_samples[i]), self.values[i]] = 1
         return y_hot
 
