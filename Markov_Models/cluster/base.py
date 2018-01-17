@@ -1,4 +1,4 @@
-from ..base import ContinuousSequence, DiscreteSequence
+from ..utils import ContinuousSequence, DiscreteSequence
 import numpy as np
 from sklearn.utils import check_array
 from scipy.spatial.distance import cdist

@@ -1,4 +1,4 @@
-from ..base import DiscreteSequence
+from ..utils import DiscreteSequence
 from ..estimation import count_matrix, transition_matrix, eigen
 import numpy as np
 

@@ -1,12 +1,15 @@
-from . import base
+from .base import MarkovChainMixin, MarkovStateModelMixin
 from .estimation import count_matrix, count_vectorizer
+from .utils import DiscreteSequence
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from copy import deepcopy
 
+
 __all__ = ['MarkovChain', 'MarkovStateModel']
 
-class MarkovChain(base.BaseMarkovChain):
+
+class MarkovChain(MarkovChainMixin):
     """ Estimator for Discrete Markov Chains
 
     Parameters
@@ -52,7 +55,7 @@ class MarkovChain(base.BaseMarkovChain):
         """
 
         # Convert to DiscreteSequence class
-        X = base.DiscreteSequence(X)
+        X = DiscreteSequence(X)
 
         # Calculate Count and Transition Matrix
         self._C = count_vectorizer(X, self.n_order, self.lag)
@@ -60,7 +63,7 @@ class MarkovChain(base.BaseMarkovChain):
         return self
 
 
-class MarkovStateModel(base.BaseReversibleMarkovStateModel):
+class MarkovStateModel(MarkovStateModelMixin):
     """ Estimator for Markov State Models
 
     Parameters
@@ -163,9 +166,9 @@ class MarkovStateModel(base.BaseReversibleMarkovStateModel):
 
         # Convert to DiscreteSequence class
         if self._encode:
-            X = base.DiscreteSequence(X, encoder=self._from_labels)
+            X = DiscreteSequence(X, encoder=self._from_labels)
         else:
-            X = base.DiscreteSequence(X)
+            X = DiscreteSequence(X)
 
         # Calculate Count and Transition Matrix
         self._C = count_matrix(X, self.lag, self._is_sparse)
