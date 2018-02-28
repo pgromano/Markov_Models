@@ -8,13 +8,13 @@ The current version of `Markov_Models` can be installed via pip, using the follo
 
     git clone https://github.com/pgromano/Markov_Models.git
     cd Markov_Models
-    python -m pip install -e
+    python -m pip install -e .
 
 To use the previous version of `Markov_Models`, install from the legacy branch.
 
     git clone -b legacy https://github.com/pgromano/Markov_Models.git
     cd Markov_Models
-    python -m pip install -e
+    python -m pip install -e .
 
 ### Usage
 
